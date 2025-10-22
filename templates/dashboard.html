@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adient Production Dashboard - Hourly Production IT</title>
-    <script src="/static/chart.umd.min.js"></script>
-    <script src="/static/chartjs-plugin-datalabels.min.js"></script>
+    <title>Hourly Production Monitoring - Adient Loznica</title>
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="{{ url_for('static', filename='chart.umd.min.js') }}?v={{ version }}&t={{ timestamp }}"></script>
+    <script src="{{ url_for('static', filename='chartjs-plugin-datalabels.min.js') }}?v={{ version }}&t={{ timestamp }}"></script>
     <style>
         * {
             margin: 0;
@@ -295,7 +298,7 @@
             try {
                 updateStatus('loading', 'Fetching data...');
                 
-                const response = await fetch('/api/production-data');
+                const response = await fetch('/api/production-data?_=' + Date.now(), { cache: 'no-store' });
                 const result = await response.json();
                 
                 if (result.success) {

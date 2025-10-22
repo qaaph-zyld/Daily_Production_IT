@@ -9,6 +9,7 @@ import json
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 from datetime import datetime
+import time
 import os
 from dotenv import load_dotenv
 from decimal import Decimal
@@ -18,6 +19,18 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Ensure latest templates/static are served (avoid stale cache in production-like runs)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.jinja_env.cache = {}
+
+@app.after_request
+def add_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # Database connection configuration from environment variables
 DB_CONFIG = {
@@ -177,7 +190,12 @@ def fetch_production_data():
 @app.route('/')
 def index():
     """Serve the dashboard HTML"""
-    return render_template('dashboard.html')
+    try:
+        tmpl_path = os.path.join(app.root_path, 'templates', 'dashboard.html')
+        version = str(int(os.path.getmtime(tmpl_path)))
+    except Exception:
+        version = str(int(time.time()))
+    return render_template('dashboard.html', version=version, timestamp=datetime.now().strftime('%Y%m%d%H%M%S'))
 
 @app.route('/api/production-data')
 def get_production_data():
