@@ -14,6 +14,9 @@ echo.
 set SCRIPT_DIR=%~dp0
 cd /d "%SCRIPT_DIR%"
 
+REM Ensure public redirect HTML is generated for shared-folder access
+powershell -NoProfile -ExecutionPolicy Bypass -File .\generate_public_redirect.ps1
+
 set LOCAL_VENV_PY=%LOCALAPPDATA%\AdientDashboard\venv\Scripts\python.exe
 
 if exist "%LOCALAPPDATA%\AdientDashboard\venv\Scripts\python.exe" (

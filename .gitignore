@@ -41,3 +41,12 @@ desktop.ini
 # Temporary files
 *.tmp
 *.temp
+
+# Build/Packaging
+build/
+dist/
+AdientDashboardService.exe*
+
+# Generated redirect + logs
+public/
+refresh_log.txt
