@@ -35,3 +35,6 @@ $addDataSta = "static;static"
   "$scriptDir/service_launcher.py"
 
 Write-Host "`nBuild finished. EXE: $scriptDir\dist\AdientDashboardService.exe`n"
+if (Test-Path (Join-Path $scriptDir ".env")) {
+  Copy-Item -Force (Join-Path $scriptDir ".env") (Join-Path $scriptDir "dist\.env")
+}

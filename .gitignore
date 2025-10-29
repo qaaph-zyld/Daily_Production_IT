@@ -50,3 +50,6 @@ AdientDashboardService.exe*
 # Generated redirect + logs
 public/
 refresh_log.txt
+
+# Service logs
+logs/

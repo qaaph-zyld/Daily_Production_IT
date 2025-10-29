@@ -2,23 +2,21 @@ import os
 import sys
 from waitress import serve
 
-# Ensure we can import the app
-import dashboard_server as ds
+# Determine paths before importing the Flask app so .env resolves correctly
+IS_FROZEN = getattr(sys, 'frozen', False)
+EXE_DIR = os.path.dirname(sys.executable) if IS_FROZEN else os.path.dirname(os.path.abspath(__file__))
+ASSET_BASE = getattr(sys, '_MEIPASS', EXE_DIR) if IS_FROZEN else EXE_DIR
 
-# If running as a PyInstaller EXE, templates and static will be in sys._MEIPASS
-if getattr(sys, 'frozen', False):
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-else:
-    base_path = os.path.dirname(os.path.abspath(__file__))
+# Use the executable directory as CWD so dashboard_server.load_dotenv finds .env
+os.chdir(EXE_DIR)
 
-# Make sure all relative paths (like .env) resolve next to the executable
-os.chdir(base_path)
+# Import app after CWD is set
+import dashboard_server as ds  # noqa: E402
 
-# Point Flask to bundled assets if needed
-templates_path = os.path.join(base_path, 'templates')
-static_path = os.path.join(base_path, 'static')
+# Point Flask to bundled assets (templates/static in _MEIPASS when frozen)
+templates_path = os.path.join(ASSET_BASE, 'templates')
+static_path = os.path.join(ASSET_BASE, 'static')
 
-# Update app folders and Jinja loader search path
 try:
     ds.app.template_folder = templates_path
     ds.app.static_folder = static_path
