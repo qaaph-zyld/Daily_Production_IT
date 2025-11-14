@@ -46,6 +46,7 @@ desktop.ini
 build/
 dist/
 AdientDashboardService.exe*
+AdientPVSService.exe*
 
 # Generated redirect + logs
 public/

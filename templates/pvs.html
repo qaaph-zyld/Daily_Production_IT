@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adient Loznica PVS</title>
+  <style>
+    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; }
+    .container { padding: 16px 20px 28px; }
+    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 12px 16px 20px; }
+    .header { display:flex; align-items:center; justify-content:space-between; padding: 10px 6px 12px; }
+    .header .left { opacity: .9; font-size: 0.95rem; }
+    .header .title { font-size: 1.6rem; letter-spacing:.5px; color: #c8e000; font-weight: 700; }
+    .header .right { text-align:right; font-size: .95rem; display:flex; align-items:center; gap:10px; }
+    .btn { background:#0fb; color:#003; border:none; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
+    .btn:hover { filter:brightness(1.1); }
+    .btn[disabled] { opacity:.6; cursor:not-allowed; }
+    .spinner { width:14px; height:14px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; display:inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    .table-wrap { overflow:auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; }
+    th, td { padding: 10px 12px; text-align: right; }
+    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 700; }
+    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 800; }
+    td:first-child, th:first-child { text-align: left; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    tr:hover td { background: rgba(255,255,255,0.06); }
+
+    .num { font-variant-numeric: tabular-nums; }
+    .delta-pos { background: rgba(40, 167, 69, 0.40); color: #eafff2; }
+    .delta-neg { background: rgba(220, 53, 69, 0.45); color: #fff; }
+    .adh-low { background: rgba(220, 53, 69, 0.35); }
+    .adh-mid { background: rgba(255, 193, 7, 0.35); }
+    .adh-high { background: rgba(40, 167, 69, 0.35); }
+
+    .status { display:flex; gap:18px; font-size:.95rem; color:#cde4e6; }
+    .badge { display:inline-flex; align-items:center; gap:8px; }
+    .dot { width:10px; height:10px; border-radius:50%; background:#2ecc71; display:inline-block; }
+
+    .legend { margin-top: 8px; opacity:.9; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <div class="header">
+        <div class="left">
+          <div class="badge"><span class="dot"></span> Connected</div>
+        </div>
+        <div class="title">ADIENT LOZNICA PVS</div>
+        <div class="right">
+          <button id="refreshBtn" class="btn" onclick="manualRefresh()">Refresh now</button>
+          <div>
+            <div>Last update: <span id="lastUp">-</span></div>
+            <div>Next refresh: <span id="nextRef">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="pvsTable">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:00 (local time).</div>
+    </div>
+  </div>
+
+<script>
+const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
+const fmtPct = n => `${(n??0).toFixed(0)}%`;
+
+function adhClass(p){ if (p <= 80) return 'adh-low'; if (p < 100) return 'adh-mid'; return 'adh-high'; }
+function deltaClass(d){ return d >= 0 ? 'delta-pos' : 'delta-neg'; }
+
+function buildHeader() {
+  const thead = document.getElementById('thead');
+  thead.innerHTML = `
+    <tr>
+      <th rowspan="2">Line</th>
+      <th class="group" colspan="4">MTD</th>
+      <th class="group" colspan="4">WTD</th>
+      <th class="group" colspan="4">Daily PVS</th>
+    </tr>
+    <tr>
+      <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+      <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+      <th>Daily schedule</th><th>Daily production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+    </tr>`;
+}
+
+function renderRows(rows){
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  for (const r of rows){
+    const tr = document.createElement('tr');
+    const c = (html, cls='') => { const td=document.createElement('td'); if(cls) td.className=cls; td.innerHTML=html; return td; };
+    tr.appendChild(c(r.line));
+    // MTD
+    tr.appendChild(c(fmtInt(r.mtd.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.mtd.production), 'num'));
+    tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`));
+    tr.appendChild(c(fmtPct(r.mtd.adherence_pct), `num ${adhClass(r.mtd.adherence_pct)}`));
+    // WTD
+    tr.appendChild(c(fmtInt(r.wtd.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.wtd.production), 'num'));
+    tr.appendChild(c(fmtInt(r.wtd.delta), `num ${deltaClass(r.wtd.delta)}`));
+    tr.appendChild(c(fmtPct(r.wtd.adherence_pct), `num ${adhClass(r.wtd.adherence_pct)}`));
+    // Daily
+    tr.appendChild(c(fmtInt(r.daily.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.daily.production), 'num'));
+    tr.appendChild(c(fmtInt(r.daily.delta), `num ${deltaClass(r.daily.delta)}`));
+    tr.appendChild(c(fmtPct(r.daily.adherence_pct), `num ${adhClass(r.daily.adherence_pct)}`));
+    tb.appendChild(tr);
+  }
+}
+
+async function loadData(){
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+  try {
+    const res = await fetch('/api/pvs?_=' + Date.now());
+    const json = await res.json();
+    document.getElementById('lastUp').textContent = new Date().toLocaleString();
+    if (json && json.success){ renderRows(json.rows); }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Refresh now'; }
+  }
+}
+
+function manualRefresh(){
+  loadData();
+}
+
+function nextWorkdayEight(){
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(8,0,0,0);
+  if (now >= next) next.setDate(next.getDate() + 1);
+  while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
+  return next;
+}
+
+function scheduleRefresh(){
+  const next = nextWorkdayEight();
+  const ms = next.getTime() - Date.now();
+  const fmt = (ms) => {
+    const total = Math.floor(ms/1000);
+    const h = Math.floor(total/3600), m = Math.floor((total%3600)/60);
+    return `${h}h ${m}m`;
+  }
+  document.getElementById('nextRef').textContent = `${next.toLocaleString()} (${fmt(ms)})`;
+  setTimeout(() => location.reload(), Math.max(1000, ms));
+}
+
+buildHeader();
+loadData();
+scheduleRefresh();
+</script>
+</body>
+</html>

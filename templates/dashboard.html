@@ -314,10 +314,10 @@
         const SLIDESHOW_INTERVAL_MS = 60000; // 60s per page
 
         // TV/display tuning with defaults. URL params override.
-        // Defaults (estimated for 65" 8K wall display): TV=on, scale=1.8, text=black
+        // Defaults: TV=off (enable with ?tv=1), scale=1.0, text=black
         const _params = new URLSearchParams(window.location.search);
-        const DEFAULT_TV = true;
-        const DEFAULT_SCALE = 1.8;
+        const DEFAULT_TV = false;
+        const DEFAULT_SCALE = 1.0;
         const DEFAULT_TEXT = 'black';
 
         const tvParam = _params.get('tv');
