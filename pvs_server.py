@@ -170,11 +170,12 @@ def aggregate(values_by_day: dict[date, float], start_d: date, end_d: date) -> f
 
 def compute_metrics():
     today = date.today()
-    start_month = today.replace(day=1)
-    start_week = monday_of_week(today)
+    yesterday = today - timedelta(days=1)
+    start_month = yesterday.replace(day=1)
+    start_week = monday_of_week(yesterday)
 
     planned = load_planned_csv(PVS_PLANNED_CSV)
-    produced = fetch_produced_by_day(start_month, today)
+    produced = fetch_produced_by_day(start_month, yesterday)
     mapping = load_map_csv(PVS_MAP_CSV)
 
     # Build union of all line codes seen in plan or production
@@ -186,15 +187,15 @@ def compute_metrics():
         plan_days = planned.get(code, {})
         prod_days = produced.get(code, {})
 
-        # Plans
-        plan_day = int(plan_days.get(today, 0) or 0)
-        plan_wtd = int(aggregate(plan_days, start_week, today))
-        plan_mtd = int(aggregate(plan_days, start_month, today))
+        # Plans (yesterday's data)
+        plan_day = int(plan_days.get(yesterday, 0) or 0)
+        plan_wtd = int(aggregate(plan_days, start_week, yesterday))
+        plan_mtd = int(aggregate(plan_days, start_month, yesterday))
 
-        # Produced
-        prod_day = float(prod_days.get(today, 0) or 0)
-        prod_wtd = float(aggregate(prod_days, start_week, today))
-        prod_mtd = float(aggregate(prod_days, start_month, today))
+        # Produced (yesterday's data)
+        prod_day = float(prod_days.get(yesterday, 0) or 0)
+        prod_wtd = float(aggregate(prod_days, start_week, yesterday))
+        prod_mtd = float(aggregate(prod_days, start_month, yesterday))
 
         # Deltas
         d_day = prod_day - plan_day
@@ -242,7 +243,7 @@ def compute_metrics():
 
     return {
         'success': True,
-        'date': today.strftime('%Y-%m-%d'),
+        'date': yesterday.strftime('%Y-%m-%d'),
         'rows': rows,
     }
 

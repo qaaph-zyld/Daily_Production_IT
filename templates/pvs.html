@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Adient Loznica PVS</title>
   <style>
-    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; }
+    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: 15px; }
     .container { padding: 16px 20px 28px; }
     .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 12px 16px 20px; }
     .header { display:flex; align-items:center; justify-content:space-between; padding: 10px 6px 12px; }
-    .header .left { opacity: .9; font-size: 0.95rem; }
-    .header .title { font-size: 1.6rem; letter-spacing:.5px; color: #c8e000; font-weight: 700; }
-    .header .right { text-align:right; font-size: .95rem; display:flex; align-items:center; gap:10px; }
+    .header .left { opacity: .9; font-size: 1.05rem; }
+    .header .title { font-size: 1.8rem; letter-spacing:.5px; color: #c8e000; font-weight: 700; }
+    .header .right { text-align:right; font-size: 1.05rem; display:flex; align-items:center; gap:10px; }
     .btn { background:#0fb; color:#003; border:none; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
     .btn:hover { filter:brightness(1.1); }
     .btn[disabled] { opacity:.6; cursor:not-allowed; }
@@ -19,10 +19,10 @@
     @keyframes spin { to { transform: rotate(360deg) } }
 
     .table-wrap { overflow:auto; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; }
-    th, td { padding: 10px 12px; text-align: right; }
-    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 700; }
-    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 800; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: 1.1rem; }
+    th, td { padding: 12px 14px; text-align: right; }
+    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 700; font-size: 1.05rem; }
+    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 800; font-size: 1.1rem; }
     td:first-child, th:first-child { text-align: left; }
     tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
     tr:hover td { background: rgba(255,255,255,0.06); }
@@ -38,7 +38,7 @@
     .badge { display:inline-flex; align-items:center; gap:8px; }
     .dot { width:10px; height:10px; border-radius:50%; background:#2ecc71; display:inline-block; }
 
-    .legend { margin-top: 8px; opacity:.9; font-size:.9rem; }
+    .legend { margin-top: 8px; opacity:.9; font-size:1rem; }
   </style>
 </head>
 <body>
@@ -64,7 +64,7 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
-      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:00 (local time).</div>
+      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:45 (local time). Daily values show yesterday's data.</div>
     </div>
   </div>
 
@@ -87,7 +87,7 @@ function buildHeader() {
     <tr>
       <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
       <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
-      <th>Daily schedule</th><th>Daily production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+      <th>Yesterday schedule</th><th>Yesterday production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
     </tr>`;
 }
 
@@ -139,7 +139,7 @@ function manualRefresh(){
 function nextWorkdayEight(){
   const now = new Date();
   const next = new Date(now);
-  next.setHours(8,0,0,0);
+  next.setHours(8,45,0,0);
   if (now >= next) next.setDate(next.getDate() + 1);
   while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
   return next;

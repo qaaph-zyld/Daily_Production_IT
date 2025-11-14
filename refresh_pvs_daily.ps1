@@ -1,3 +1,4 @@
+# PVS Daily Refresh - Scheduled for 08:45 CET on weekdays
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
