@@ -42,6 +42,9 @@ $dstPvs = Join-Path $scriptDir 'dist/PVS'
 New-Item -ItemType Directory -Force -Path $dstPvs | Out-Null
 $srcCsv = Join-Path $scriptDir 'PVS/Planned_qtys.csv'
 if (Test-Path $srcCsv) { Copy-Item -Force $srcCsv (Join-Path $dstPvs 'Planned_qtys.csv') }
+# Copy PVS planned XLSX (primary source)
+$srcXlsx = Join-Path $scriptDir 'PVS/Planned_qtys.xlsx'
+if (Test-Path $srcXlsx) { Copy-Item -Force $srcXlsx (Join-Path $dstPvs 'Planned_qtys.xlsx') }
  # Copy PVS mapping CSV
  $srcMap = Join-Path $scriptDir 'PVS/ProdLine_Project_Map.csv'
  if (Test-Path $srcMap) { Copy-Item -Force $srcMap (Join-Path $dstPvs 'ProdLine_Project_Map.csv') }

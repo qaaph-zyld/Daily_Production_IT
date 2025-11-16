@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Adient Loznica PVS</title>
   <style>
-    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: 15px; }
+    :root { --base-size: 16px; --head-size: 1.35rem; --group-head-size: 1.5rem; --num-dark-size: 1.45rem; }
+    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: var(--base-size); }
     .container { padding: 16px 20px 28px; }
     .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 12px 16px 20px; }
     .header { display:flex; align-items:center; justify-content:space-between; padding: 10px 6px 12px; }
@@ -21,11 +22,13 @@
     .table-wrap { overflow:auto; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: 1.1rem; }
     th, td { padding: 12px 14px; text-align: right; }
-    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 700; font-size: 1.05rem; }
-    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 800; font-size: 1.1rem; }
+    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 800; font-size: var(--head-size); }
+    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
     td:first-child, th:first-child { text-align: left; }
     tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
     tr:hover td { background: rgba(255,255,255,0.06); }
+    .row-dark td:not(.delta-pos):not(.delta-neg):not(.adh-low):not(.adh-mid):not(.adh-high) { background: #000 !important; }
+    .row-dark .num { font-size: var(--num-dark-size); }
 
     .num { font-variant-numeric: tabular-nums; }
     .delta-pos { background: rgba(40, 167, 69, 0.40); color: #eafff2; }
@@ -94,8 +97,18 @@ function buildHeader() {
 function renderRows(rows){
   const tb = document.getElementById('tbody');
   tb.innerHTML = '';
-  for (const r of rows){
+  // Determine indices for the dark zone range [BJA .. VOLVO- SEW]
+  const startName = 'BJA';
+  const endName = 'VOLVO- SEW';
+  const lines = rows.map(r => r.line);
+  const startIdx = lines.indexOf(startName);
+  const endIdx = lines.indexOf(endName);
+  for (let i = 0; i < rows.length; i++){
+    const r = rows[i];
     const tr = document.createElement('tr');
+    if (startIdx !== -1 && endIdx !== -1 && i >= startIdx && i <= endIdx){
+      tr.classList.add('row-dark');
+    }
     const c = (html, cls='') => { const td=document.createElement('td'); if(cls) td.className=cls; td.innerHTML=html; return td; };
     tr.appendChild(c(r.line));
     // MTD
