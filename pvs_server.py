@@ -1,6 +1,7 @@
 import os
 import csv
 import pyodbc
+import pandas as pd
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 from datetime import datetime, date, timedelta
@@ -29,7 +30,7 @@ FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
 PVS_PORT = int(os.getenv('PVS_PORT', '5051'))
 
 # PVS config
-PVS_PLANNED_CSV = os.getenv('PVS_PLANNED_CSV', os.path.join('PVS', 'Planned_qtys.csv'))
+PVS_PLANNED_XLSX = os.getenv('PVS_PLANNED_XLSX', os.path.join('PVS', 'Planned_qtys.xlsx'))
 PVS_ADHERENCE_CLAMP = float(os.getenv('PVS_ADHERENCE_CLAMP', '300'))  # percent cap; values beyond are treated as 0%
 PVS_MAP_CSV = os.getenv('PVS_MAP_CSV', os.path.join('PVS', 'ProdLine_Project_Map.csv'))
 
@@ -90,35 +91,51 @@ def _parse_date_ddmmyyyy(s: str) -> date | None:
         return None
 
 
-def load_planned_csv(path: str):
-    """Return dict: {line_code: {date: qty_int}}"""
+def load_planned_xlsx(path: str):
+    """Return dict: {line_code: {date: qty_int}}. Reads Excel file with formulas."""
     planned: dict[str, dict[date, int]] = {}
     if not os.path.exists(path):
         return planned
-    with open(path, 'r', newline='', encoding='utf-8') as f:
-        rdr = csv.reader(f)
-        rows = list(rdr)
-    if not rows:
-        return planned
-    header = rows[0]
-    date_cols = [_parse_date_ddmmyyyy(c) for c in header[1:]]
-    for row in rows[1:]:
-        if not row:
-            continue
-        code = norm_code(row[0] if len(row) else '')
-        if not code:
-            continue
-        per_day: dict[date, int] = {}
-        for i, cell in enumerate(row[1:]):
-            d = date_cols[i]
-            if not d:
+    
+    try:
+        # Read Excel file - pandas will evaluate formulas and return calculated values
+        df = pd.read_excel(path, engine='openpyxl')
+        
+        # First column is 'Project' (line codes), rest are dates
+        if df.empty or len(df.columns) < 2:
+            return planned
+        
+        # Parse date columns (skip first column which is 'Project')
+        date_cols = []
+        for col in df.columns[1:]:
+            d = _parse_date_ddmmyyyy(str(col))
+            date_cols.append(d)
+        
+        # Process each row
+        for idx, row in df.iterrows():
+            code = norm_code(str(row.iloc[0]) if pd.notna(row.iloc[0]) else '')
+            if not code:
                 continue
-            try:
-                q = int(float(cell.strip() or '0'))
-            except Exception:
-                q = 0
-            per_day[d] = q
-        planned[code] = per_day
+            
+            per_day: dict[date, int] = {}
+            for i, cell_value in enumerate(row.iloc[1:]):
+                d = date_cols[i]
+                if not d:
+                    continue
+                try:
+                    # Handle NaN, None, or empty values
+                    if pd.isna(cell_value):
+                        q = 0
+                    else:
+                        q = int(float(cell_value))
+                except Exception:
+                    q = 0
+                per_day[d] = q
+            planned[code] = per_day
+    except Exception as e:
+        print(f"Error loading planned XLSX: {e}")
+        return planned
+    
     return planned
 
 
@@ -172,15 +189,18 @@ def compute_metrics():
     today = date.today()
     wd = today.weekday()  # Monday=0 ... Sunday=6
     # For Sun/Mon: include both Friday and Saturday. Others: just yesterday.
-    if wd in (6, 0):  # Sunday or Monday
+    is_weekend_view = wd in (6, 0)  # Sunday or Monday
+    if is_weekend_view:
         as_of = today - timedelta(days=1 if wd == 6 else 2)  # Saturday
+        daily_start = as_of - timedelta(days=1)  # Friday
     else:
         as_of = today - timedelta(days=1)  # Yesterday
+        daily_start = as_of  # Same day
 
     start_month = as_of.replace(day=1)
     start_week = monday_of_week(as_of)
 
-    planned = load_planned_csv(PVS_PLANNED_CSV)
+    planned = load_planned_xlsx(PVS_PLANNED_XLSX)
     produced = fetch_produced_by_day(start_month, as_of)
     mapping = load_map_csv(PVS_MAP_CSV)
 
@@ -193,13 +213,13 @@ def compute_metrics():
         plan_days = planned.get(code, {})
         prod_days = produced.get(code, {})
 
-        # Plans (previous business day)
-        plan_day = int(plan_days.get(as_of, 0) or 0)
+        # Plans (previous business day or Fri+Sat)
+        plan_day = int(aggregate(plan_days, daily_start, as_of))
         plan_wtd = int(aggregate(plan_days, start_week, as_of))
         plan_mtd = int(aggregate(plan_days, start_month, as_of))
 
-        # Produced (previous business day)
-        prod_day = float(prod_days.get(as_of, 0) or 0)
+        # Produced (previous business day or Fri+Sat)
+        prod_day = float(aggregate(prod_days, daily_start, as_of))
         prod_wtd = float(aggregate(prod_days, start_week, as_of))
         prod_mtd = float(aggregate(prod_days, start_month, as_of))
 

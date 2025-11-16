@@ -3,3 +3,5 @@ Flask-CORS==4.0.0
 pyodbc==5.1.0
 python-dotenv==1.0.0
 waitress==2.1.2
+pandas==2.1.4
+openpyxl==3.1.2
