@@ -171,17 +171,11 @@ def aggregate(values_by_day: dict[date, float], start_d: date, end_d: date) -> f
 def compute_metrics():
     today = date.today()
     wd = today.weekday()  # Monday=0 ... Sunday=6
-    # For Sun/Mon: prefer Saturday if production exists; otherwise Friday. Others: yesterday.
+    # For Sun/Mon: include both Friday and Saturday. Others: just yesterday.
     if wd in (6, 0):  # Sunday or Monday
-        sat = today - timedelta(days=1 if wd == 6 else 2)
-        fri = today - timedelta(days=2 if wd == 6 else 3)
-        quick_prod = fetch_produced_by_day(fri, sat)
-        sat_total = 0.0
-        for _code, per_day in quick_prod.items():
-            sat_total += float(per_day.get(sat, 0) or 0)
-        as_of = sat if sat_total > 0 else fri
+        as_of = today - timedelta(days=1 if wd == 6 else 2)  # Saturday
     else:
-        as_of = today - timedelta(days=1)
+        as_of = today - timedelta(days=1)  # Yesterday
 
     start_month = as_of.replace(day=1)
     start_week = monday_of_week(as_of)
