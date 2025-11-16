@@ -64,7 +64,7 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
-      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:45 (local time). Daily values show yesterday's data.</div>
+      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:45 (local time). Daily values show the last business day's data (on Sun/Mon, Saturday is used if it has production, otherwise Friday).</div>
     </div>
   </div>
 
@@ -87,7 +87,7 @@ function buildHeader() {
     <tr>
       <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
       <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
-      <th>Yesterday schedule</th><th>Yesterday production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+      <th>Last business day schedule</th><th>Last business day production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
     </tr>`;
 }
 

@@ -170,12 +170,24 @@ def aggregate(values_by_day: dict[date, float], start_d: date, end_d: date) -> f
 
 def compute_metrics():
     today = date.today()
-    yesterday = today - timedelta(days=1)
-    start_month = yesterday.replace(day=1)
-    start_week = monday_of_week(yesterday)
+    wd = today.weekday()  # Monday=0 ... Sunday=6
+    # For Sun/Mon: prefer Saturday if production exists; otherwise Friday. Others: yesterday.
+    if wd in (6, 0):  # Sunday or Monday
+        sat = today - timedelta(days=1 if wd == 6 else 2)
+        fri = today - timedelta(days=2 if wd == 6 else 3)
+        quick_prod = fetch_produced_by_day(fri, sat)
+        sat_total = 0.0
+        for _code, per_day in quick_prod.items():
+            sat_total += float(per_day.get(sat, 0) or 0)
+        as_of = sat if sat_total > 0 else fri
+    else:
+        as_of = today - timedelta(days=1)
+
+    start_month = as_of.replace(day=1)
+    start_week = monday_of_week(as_of)
 
     planned = load_planned_csv(PVS_PLANNED_CSV)
-    produced = fetch_produced_by_day(start_month, yesterday)
+    produced = fetch_produced_by_day(start_month, as_of)
     mapping = load_map_csv(PVS_MAP_CSV)
 
     # Build union of all line codes seen in plan or production
@@ -187,15 +199,15 @@ def compute_metrics():
         plan_days = planned.get(code, {})
         prod_days = produced.get(code, {})
 
-        # Plans (yesterday's data)
-        plan_day = int(plan_days.get(yesterday, 0) or 0)
-        plan_wtd = int(aggregate(plan_days, start_week, yesterday))
-        plan_mtd = int(aggregate(plan_days, start_month, yesterday))
+        # Plans (previous business day)
+        plan_day = int(plan_days.get(as_of, 0) or 0)
+        plan_wtd = int(aggregate(plan_days, start_week, as_of))
+        plan_mtd = int(aggregate(plan_days, start_month, as_of))
 
-        # Produced (yesterday's data)
-        prod_day = float(prod_days.get(yesterday, 0) or 0)
-        prod_wtd = float(aggregate(prod_days, start_week, yesterday))
-        prod_mtd = float(aggregate(prod_days, start_month, yesterday))
+        # Produced (previous business day)
+        prod_day = float(prod_days.get(as_of, 0) or 0)
+        prod_wtd = float(aggregate(prod_days, start_week, as_of))
+        prod_mtd = float(aggregate(prod_days, start_month, as_of))
 
         # Deltas
         d_day = prod_day - plan_day
@@ -243,7 +255,7 @@ def compute_metrics():
 
     return {
         'success': True,
-        'date': yesterday.strftime('%Y-%m-%d'),
+        'date': as_of.strftime('%Y-%m-%d'),
         'rows': rows,
     }
 
