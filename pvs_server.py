@@ -7,6 +7,12 @@ from flask_cors import CORS
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 from decimal import Decimal
+try:
+    import win32com.client as win32
+    import pythoncom
+except Exception:
+    win32 = None
+    pythoncom = None
 
 # Load .env
 load_dotenv()
@@ -31,6 +37,7 @@ PVS_PORT = int(os.getenv('PVS_PORT', '5051'))
 
 # PVS config
 PVS_PLANNED_XLSX = os.getenv('PVS_PLANNED_XLSX', os.path.join('PVS', 'Planned_qtys.xlsx'))
+PVS_RECALC_XLSX = os.getenv('PVS_RECALC_XLSX', 'false').strip().lower() in ('1', 'true', 'yes')
 PVS_ADHERENCE_CLAMP = float(os.getenv('PVS_ADHERENCE_CLAMP', '300'))  # percent cap; values beyond are treated as 0%
 PVS_MAP_CSV = os.getenv('PVS_MAP_CSV', os.path.join('PVS', 'ProdLine_Project_Map.csv'))
 
@@ -91,6 +98,112 @@ def _parse_date_ddmmyyyy(s: str) -> date | None:
         return None
 
 
+def _coerce_header_to_date(col) -> date | None:
+    try:
+        # Direct types
+        if isinstance(col, date) and not isinstance(col, datetime):
+            return col
+        if isinstance(col, datetime):
+            return col.date()
+        # Pandas Timestamp
+        if 'Timestamp' in type(col).__name__:
+            try:
+                return col.date()
+            except Exception:
+                pass
+        # Excel serial number (float/int)
+        if isinstance(col, (int, float)):
+            try:
+                # Excel 1900 date system origin
+                d = pd.to_datetime(col, unit='D', origin='1899-12-30', errors='raise')
+                return d.date()
+            except Exception:
+                pass
+        # String formats: dd/mm/yyyy, ISO, or generic
+        s = str(col).strip()
+        d = _parse_date_ddmmyyyy(s)
+        if d:
+            return d
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            pass
+        try:
+            d2 = pd.to_datetime(s, dayfirst=True, errors='coerce')
+            if pd.notna(d2):
+                return d2.date()
+        except Exception:
+            pass
+    except Exception:
+        return None
+    return None
+
+
+def recalc_excel_workbook(path: str) -> bool:
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        if win32 is None or pythoncom is None:
+            return False
+        pythoncom.CoInitialize()
+        xl = win32.DispatchEx('Excel.Application')
+        try:
+            xl.Visible = False
+            xl.DisplayAlerts = False
+            try:
+                xl.AskToUpdateLinks = False
+            except Exception:
+                pass
+            wb = xl.Workbooks.Open(os.path.abspath(path), UpdateLinks=3)
+            try:
+                try:
+                    links = wb.LinkSources(1)  # 1 = xlLinkTypeExcelLinks
+                    if links:
+                        for ln in links:
+                            try:
+                                wb.UpdateLink(ln, 1)
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                try:
+                    wb.RefreshAll()
+                except Exception:
+                    pass
+                try:
+                    xl.CalculateUntilAsyncQueriesDone()
+                except Exception:
+                    pass
+                try:
+                    xl.CalculateFullRebuild()
+                except Exception:
+                    try:
+                        xl.CalculateFull()
+                    except Exception:
+                        pass
+                try:
+                    wb.Save()
+                except Exception:
+                    pass
+            finally:
+                try:
+                    wb.Close(SaveChanges=False)
+                except Exception:
+                    pass
+        finally:
+            try:
+                xl.Quit()
+            except Exception:
+                pass
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
+        return True
+    except Exception:
+        return False
+
+
 def load_planned_xlsx(path: str):
     """Return dict: {line_code: {date: qty_int}}. Reads Excel file with formulas."""
     planned: dict[str, dict[date, int]] = {}
@@ -108,7 +221,7 @@ def load_planned_xlsx(path: str):
         # Parse date columns (skip first column which is 'Project')
         date_cols = []
         for col in df.columns[1:]:
-            d = _parse_date_ddmmyyyy(str(col))
+            d = _coerce_header_to_date(col)
             date_cols.append(d)
         
         # Process each row
@@ -200,6 +313,8 @@ def compute_metrics():
     start_month = as_of.replace(day=1)
     start_week = monday_of_week(as_of)
 
+    if PVS_RECALC_XLSX:
+        recalc_excel_workbook(PVS_PLANNED_XLSX)
     planned = load_planned_xlsx(PVS_PLANNED_XLSX)
     produced = fetch_produced_by_day(start_month, as_of)
     mapping = load_map_csv(PVS_MAP_CSV)
