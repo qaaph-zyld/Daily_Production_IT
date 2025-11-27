@@ -1,0 +1,115 @@
+{
+  "_comment": "Adient PVS Dashboard Configuration - All variables in one place",
+  
+  "display": {
+    "resolution": {
+      "width": 1920,
+      "height": 1080,
+      "description": "TV display resolution"
+    },
+    "zoom": 100,
+    "showLastNRows": 20,
+    "description": "TV/Monitor display settings"
+  },
+
+  "typography": {
+    "baseFontSize": "15px",
+    "headerFontSize": "1.25rem",
+    "groupHeaderFontSize": "1.4rem",
+    "dataFontSize": "1.3rem",
+    "lineFontSize": "1.1rem",
+    "fontFamily": "Segoe UI, Roboto, Arial, sans-serif",
+    "description": "Font sizes optimized for 1080p TV viewing"
+  },
+
+  "colors": {
+    "brand": {
+      "primary": "#004851",
+      "accent": "#C4D600",
+      "description": "Adient corporate colors"
+    },
+    "background": {
+      "page": "#0a3b41",
+      "panel": "#0e4b52",
+      "table": "#08343a",
+      "header": "#0f5560",
+      "rowAlt": "rgba(255,255,255,0.02)",
+      "rowHover": "rgba(255,255,255,0.06)",
+      "rowDark": "#000000"
+    },
+    "text": {
+      "primary": "#e8f1f2",
+      "header": "#e3f2f4",
+      "muted": "#cde4e6"
+    },
+    "delta": {
+      "positive": {
+        "bg": "rgba(40, 167, 69, 0.40)",
+        "text": "#eafff2"
+      },
+      "negative": {
+        "bg": "rgba(220, 53, 69, 0.45)",
+        "text": "#ffffff"
+      }
+    },
+    "adherence": {
+      "gradient": {
+        "description": "Color intensity based on distance from 0%. Closer to 0% = darker/neutral. Further from 0% = brighter color.",
+        "neutralAt0": "#1a1a2e",
+        "positiveMax": "#28a745",
+        "negativeMax": "#dc3545",
+        "thresholds": {
+          "lowEnd": -50,
+          "highEnd": 50
+        }
+      }
+    },
+    "status": {
+      "connected": "#2ecc71",
+      "disconnected": "#e74c3c"
+    }
+  },
+
+  "schedule": {
+    "refreshTime": "08:45",
+    "timezone": "CET",
+    "daysOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "autoRefreshIntervalMs": 0,
+    "description": "Dashboard refreshes once daily at 08:45 CET, Mon-Fri only"
+  },
+
+  "dataSources": {
+    "plannedQtysExcel": "PVS/Planned_qtys.xlsx",
+    "externalSourceExcel": "G:\\Logistics\\6_Reporting\\1_PVS\\WH Receipt FY25.xlsx",
+    "prodLineMapCsv": "PVS/ProdLine_Project_Map.csv",
+    "description": "Excel files and data source paths"
+  },
+
+  "database": {
+    "server": "a265m001",
+    "database": "QADEE2798",
+    "description": "SQL Server connection (credentials in .env)"
+  },
+
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5051,
+    "description": "Flask server configuration"
+  },
+
+  "behavior": {
+    "adherenceClampPercent": 300,
+    "recalcExcelOnLoad": true,
+    "showWeekendDataOnMonday": true,
+    "description": "Dashboard behavior settings"
+  },
+
+  "layout": {
+    "containerPadding": "12px 16px 16px",
+    "tableBorderRadius": "10px",
+    "cellPadding": "10px 12px",
+    "headerRowCount": 2,
+    "stickyHeader": true,
+    "description": "Layout and spacing settings"
+  }
+}

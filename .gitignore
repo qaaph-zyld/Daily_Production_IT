@@ -54,3 +54,15 @@ refresh_log.txt
 
 # Service logs
 logs/
+
+# Archive folder (obsolete/backup files)
+_archive/
+
+# PyInstaller specs
+*.spec
+
+# Static assets (downloaded at runtime)
+static/
+
+# Snapshots
+.snapshots/

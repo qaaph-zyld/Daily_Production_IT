@@ -5,43 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Adient Loznica PVS</title>
   <style>
-    :root { --base-size: 16px; --head-size: 1.35rem; --group-head-size: 1.5rem; --num-dark-size: 1.45rem; }
+    /* === TV-OPTIMIZED SIZING (65" 4K, 3840x2160) === */
+    :root {
+      --base-size: 18px;
+      --head-size: 1.6rem;
+      --group-head-size: 1.8rem;
+      --num-size: 1.7rem;
+      --line-name-size: 1.4rem;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
     body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: var(--base-size); }
-    .container { padding: 16px 20px 28px; }
-    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.25); padding: 12px 16px 20px; }
-    .header { display:flex; align-items:center; justify-content:space-between; padding: 10px 6px 12px; }
-    .header .left { opacity: .9; font-size: 1.05rem; }
-    .header .title { font-size: 1.8rem; letter-spacing:.5px; color: #c8e000; font-weight: 700; }
-    .header .right { text-align:right; font-size: 1.05rem; display:flex; align-items:center; gap:10px; }
-    .btn { background:#0fb; color:#003; border:none; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
-    .btn:hover { filter:brightness(1.1); }
-    .btn[disabled] { opacity:.6; cursor:not-allowed; }
-    .spinner { width:14px; height:14px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; display:inline-block; animation: spin 1s linear infinite; }
+
+    .container { padding: 18px 36px 16px; height: 100%; display: flex; flex-direction: column; }
+    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 10px 18px 14px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 8px; flex-shrink: 0; }
+    .header .left { opacity: .9; font-size: 1rem; }
+    .header .title { font-size: 2.2rem; letter-spacing: .7px; color: #c8e000; font-weight: 700; }
+    .header .right { text-align: right; font-size: 1rem; display: flex; align-items: center; gap: 12px; }
+
+    .btn { background: #0fb; color: #003; border: none; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 1rem; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg) } }
 
-    .table-wrap { overflow:auto; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: 1.1rem; }
-    th, td { padding: 12px 14px; text-align: right; }
+    .table-wrap { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: var(--num-size); }
+    th, td { padding: 10px 18px; text-align: right; white-space: nowrap; }
     th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 800; font-size: var(--head-size); }
-    th.group { background: #114f56; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
-    td:first-child, th:first-child { text-align: left; }
+    th.group { background: #0f6a70; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
+    /* Different header colors per block */
+    thead tr:first-child th.group:nth-of-type(2) { background: #0f6a70; }   /* MTD */
+    thead tr:first-child th.group:nth-of-type(3) { background: #154f7a; }   /* WTD */
+    thead tr:first-child th.group:nth-of-type(4) { background: #6a5b16; }   /* Daily */
+    /* Second header row block colors (rowspan on "Line" means this row has 12 th's) */
+    thead tr:nth-child(2) th:nth-child(1),
+    thead tr:nth-child(2) th:nth-child(2),
+    thead tr:nth-child(2) th:nth-child(3),
+    thead tr:nth-child(2) th:nth-child(4)   { background: #0f6a70; }  /* MTD */
+    thead tr:nth-child(2) th:nth-child(5),
+    thead tr:nth-child(2) th:nth-child(6),
+    thead tr:nth-child(2) th:nth-child(7),
+    thead tr:nth-child(2) th:nth-child(8)   { background: #154f7a; }  /* WTD */
+    thead tr:nth-child(2) th:nth-child(9),
+    thead tr:nth-child(2) th:nth-child(10),
+    thead tr:nth-child(2) th:nth-child(11),
+    thead tr:nth-child(2) th:nth-child(12)  { background: #6a5b16; }  /* Daily */
+    td:first-child, th:first-child { text-align: left; font-size: var(--line-name-size); }
+
+    /* Vertical separators between metric blocks (MTD / WTD / Daily) */
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(10), td:nth-child(10) {
+      border-left: 2px solid rgba(0, 0, 0, 0.55);
+    }
+
     tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
     tr:hover td { background: rgba(255,255,255,0.06); }
-    .row-dark td:not(.delta-pos):not(.delta-neg):not(.adh-low):not(.adh-mid):not(.adh-high) { background: #000 !important; }
-    .row-dark .num { font-size: var(--num-dark-size); }
+    .row-dark td:first-child { background: #000; }
 
-    .num { font-variant-numeric: tabular-nums; }
-    .delta-pos { background: rgba(40, 167, 69, 0.40); color: #eafff2; }
-    .delta-neg { background: rgba(220, 53, 69, 0.45); color: #fff; }
-    .adh-low { background: rgba(220, 53, 69, 0.35); }
-    .adh-mid { background: rgba(255, 193, 7, 0.35); }
-    .adh-high { background: rgba(40, 167, 69, 0.35); }
+    .num { font-variant-numeric: tabular-nums; font-weight: 600; }
 
-    .status { display:flex; gap:18px; font-size:.95rem; color:#cde4e6; }
-    .badge { display:inline-flex; align-items:center; gap:8px; }
-    .dot { width:10px; height:10px; border-radius:50%; background:#2ecc71; display:inline-block; }
+    /* Delta colors - static positive/negative (text + left bar; band background comes from gradient) */
+    .delta-pos { color: #9cf0a5; border-left: 3px solid rgba(40, 167, 69, 0.9); }
+    .delta-neg { color: #ffb3b3; border-left: 3px solid rgba(220, 53, 69, 0.95); }
 
-    .legend { margin-top: 8px; opacity:.9; font-size:1rem; }
+    .status { display: flex; gap: 18px; font-size: .95rem; color: #cde4e6; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; display: inline-block; }
+
+    .legend { margin-top: 6px; opacity: .9; font-size: 0.9rem; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -75,7 +111,40 @@
 const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
 const fmtPct = n => `${(n??0).toFixed(0)}%`;
 
-function adhClass(p){ if (p <= 80) return 'adh-low'; if (p < 100) return 'adh-mid'; return 'adh-high'; }
+/**
+ * Adherence color gradient:
+ * - At 0% deviation: dark/neutral (near black)
+ * - As deviation increases (positive or negative): color becomes brighter
+ * - Positive deviation -> brighter green
+ * - Negative deviation -> brighter red
+ * Returns inline style string for background-color
+ */
+function getAdherenceStyle(pct) {
+  // pct is the adherence percentage (e.g., -25 means 25% below target)
+  // We treat it as deviation from 0%
+  const deviation = Math.abs(pct);
+  const maxDeviation = 50; // Full intensity at 50% deviation
+  const intensity = Math.min(deviation / maxDeviation, 1); // 0 to 1
+  
+  if (pct >= 0) {
+    // Positive: green gradient (dark -> bright green)
+    // At 0%: rgb(20, 30, 25) - very dark
+    // At 50%+: rgb(40, 167, 69) - bright green
+    const r = Math.round(20 + (40 - 20) * intensity);
+    const g = Math.round(30 + (167 - 30) * intensity);
+    const b = Math.round(25 + (69 - 25) * intensity);
+    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#d4ffd4' : '#aaa'};`;
+  } else {
+    // Negative: red gradient (dark -> bright red)
+    // At 0%: rgb(30, 20, 20) - very dark
+    // At -50%+: rgb(220, 53, 69) - bright red
+    const r = Math.round(30 + (220 - 30) * intensity);
+    const g = Math.round(20 + (53 - 20) * intensity);
+    const b = Math.round(20 + (69 - 20) * intensity);
+    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#fff' : '#aaa'};`;
+  }
+}
+
 function deltaClass(d){ return d >= 0 ? 'delta-pos' : 'delta-neg'; }
 
 function buildHeader() {
@@ -88,9 +157,9 @@ function buildHeader() {
       <th class="group" colspan="4">Daily PVS</th>
     </tr>
     <tr>
-      <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
-      <th>Schedule</th><th>Production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
-      <th>Last business day schedule</th><th>Last business day production</th><th>Delta (pcs)</th><th>Adherence (%)</th>
+      <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
+      <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
+      <th>Sched</th><th>Prod</th><th>Delta</th><th>Adh %</th>
     </tr>`;
 }
 
@@ -103,29 +172,45 @@ function renderRows(rows){
   const lines = rows.map(r => r.line);
   const startIdx = lines.indexOf(startName);
   const endIdx = lines.indexOf(endName);
+  
   for (let i = 0; i < rows.length; i++){
     const r = rows[i];
     const tr = document.createElement('tr');
     if (startIdx !== -1 && endIdx !== -1 && i >= startIdx && i <= endIdx){
       tr.classList.add('row-dark');
     }
-    const c = (html, cls='') => { const td=document.createElement('td'); if(cls) td.className=cls; td.innerHTML=html; return td; };
+    
+    const c = (html, cls='', style='') => { 
+      const td = document.createElement('td'); 
+      if(cls) td.className = cls; 
+      if(style) td.style.cssText = style;
+      td.innerHTML = html; 
+      return td; 
+    };
+    
     tr.appendChild(c(r.line));
+    
     // MTD
-    tr.appendChild(c(fmtInt(r.mtd.schedule), 'num'));
-    tr.appendChild(c(fmtInt(r.mtd.production), 'num'));
-    tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`));
-    tr.appendChild(c(fmtPct(r.mtd.adherence_pct), `num ${adhClass(r.mtd.adherence_pct)}`));
+    const mtdStyle = getAdherenceStyle(r.mtd.adherence_pct);
+    tr.appendChild(c(fmtInt(r.mtd.schedule), 'num', mtdStyle));
+    tr.appendChild(c(fmtInt(r.mtd.production), 'num', mtdStyle));
+    tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`, mtdStyle));
+    tr.appendChild(c(fmtPct(r.mtd.adherence_pct), 'num', mtdStyle));
+    
     // WTD
-    tr.appendChild(c(fmtInt(r.wtd.schedule), 'num'));
-    tr.appendChild(c(fmtInt(r.wtd.production), 'num'));
-    tr.appendChild(c(fmtInt(r.wtd.delta), `num ${deltaClass(r.wtd.delta)}`));
-    tr.appendChild(c(fmtPct(r.wtd.adherence_pct), `num ${adhClass(r.wtd.adherence_pct)}`));
+    const wtdStyle = getAdherenceStyle(r.wtd.adherence_pct);
+    tr.appendChild(c(fmtInt(r.wtd.schedule), 'num', wtdStyle));
+    tr.appendChild(c(fmtInt(r.wtd.production), 'num', wtdStyle));
+    tr.appendChild(c(fmtInt(r.wtd.delta), `num ${deltaClass(r.wtd.delta)}`, wtdStyle));
+    tr.appendChild(c(fmtPct(r.wtd.adherence_pct), 'num', wtdStyle));
+    
     // Daily
-    tr.appendChild(c(fmtInt(r.daily.schedule), 'num'));
-    tr.appendChild(c(fmtInt(r.daily.production), 'num'));
-    tr.appendChild(c(fmtInt(r.daily.delta), `num ${deltaClass(r.daily.delta)}`));
-    tr.appendChild(c(fmtPct(r.daily.adherence_pct), `num ${adhClass(r.daily.adherence_pct)}`));
+    const dailyStyle = getAdherenceStyle(r.daily.adherence_pct);
+    tr.appendChild(c(fmtInt(r.daily.schedule), 'num', dailyStyle));
+    tr.appendChild(c(fmtInt(r.daily.production), 'num', dailyStyle));
+    tr.appendChild(c(fmtInt(r.daily.delta), `num ${deltaClass(r.daily.delta)}`, dailyStyle));
+    tr.appendChild(c(fmtPct(r.daily.adherence_pct), 'num', dailyStyle));
+    
     tb.appendChild(tr);
   }
 }
@@ -149,23 +234,25 @@ function manualRefresh(){
   loadData();
 }
 
-function nextWorkdayEight(){
+function nextWorkdayRefresh(){
+  // Next refresh at 08:45 CET, Mon-Fri only
   const now = new Date();
   const next = new Date(now);
-  next.setHours(8,45,0,0);
+  next.setHours(8, 45, 0, 0);
   if (now >= next) next.setDate(next.getDate() + 1);
+  // Skip weekends
   while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
   return next;
 }
 
 function scheduleRefresh(){
-  const next = nextWorkdayEight();
+  const next = nextWorkdayRefresh();
   const ms = next.getTime() - Date.now();
   const fmt = (ms) => {
-    const total = Math.floor(ms/1000);
-    const h = Math.floor(total/3600), m = Math.floor((total%3600)/60);
+    const total = Math.floor(ms / 1000);
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60);
     return `${h}h ${m}m`;
-  }
+  };
   document.getElementById('nextRef').textContent = `${next.toLocaleString()} (${fmt(ms)})`;
   setTimeout(() => location.reload(), Math.max(1000, ms));
 }

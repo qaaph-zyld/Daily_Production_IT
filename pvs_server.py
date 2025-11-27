@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import pyodbc
 import pandas as pd
 from flask import Flask, render_template, jsonify
@@ -16,6 +17,17 @@ except Exception:
 
 # Load .env
 load_dotenv()
+
+# Load settings.json if available (optional config override)
+SETTINGS = {}
+SETTINGS_PATH = os.path.join(os.path.dirname(__file__), 'config', 'settings.json')
+if os.path.exists(SETTINGS_PATH):
+    try:
+        with open(SETTINGS_PATH, 'r', encoding='utf-8') as f:
+            SETTINGS = json.load(f)
+        print(f"[CONFIG] Loaded settings from {SETTINGS_PATH}")
+    except Exception as e:
+        print(f"[CONFIG] Warning: Could not load settings.json: {e}")
 
 app = Flask(__name__)
 CORS(app)
@@ -208,7 +220,10 @@ def load_planned_xlsx(path: str):
     """Return dict: {line_code: {date: qty_int}}. Reads Excel file with formulas."""
     planned: dict[str, dict[date, int]] = {}
     if not os.path.exists(path):
+        print(f"[LOAD] ERROR: Planned XLSX not found: {path}")
         return planned
+    
+    print(f"[LOAD] Loading planned data from: {path}")
     
     try:
         # Read Excel file - pandas will evaluate formulas and return calculated values
@@ -246,9 +261,12 @@ def load_planned_xlsx(path: str):
                 per_day[d] = q
             planned[code] = per_day
     except Exception as e:
-        print(f"Error loading planned XLSX: {e}")
+        print(f"[LOAD] ERROR loading planned XLSX: {e}")
+        import traceback
+        traceback.print_exc()
         return planned
     
+    print(f"[LOAD] Successfully loaded {len(planned)} production lines")
     return planned
 
 
@@ -313,8 +331,15 @@ def compute_metrics():
     start_month = as_of.replace(day=1)
     start_week = monday_of_week(as_of)
 
+    print(f"[COMPUTE] Computing metrics for date: {as_of}")
+    print(f"[COMPUTE] PVS_RECALC_XLSX={PVS_RECALC_XLSX}, PVS_PLANNED_XLSX={PVS_PLANNED_XLSX}")
+    
     if PVS_RECALC_XLSX:
+        print("[COMPUTE] Attempting Excel recalculation...")
         recalc_excel_workbook(PVS_PLANNED_XLSX)
+    else:
+        print("[COMPUTE] Excel recalc disabled - using cached values")
+    
     planned = load_planned_xlsx(PVS_PLANNED_XLSX)
     produced = fetch_produced_by_day(start_month, as_of)
     mapping = load_map_csv(PVS_MAP_CSV)
