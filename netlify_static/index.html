@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adient Loznica PVS (Static)</title>
+  <style>
+    /* === TV-OPTIMIZED SIZING (65" 4K, 3840x2160) === */
+    :root {
+      --base-size: 17px;
+      --head-size: 1.5rem;
+      --group-head-size: 1.7rem;
+      --num-size: 1.55rem;
+      --line-name-size: 1.3rem;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: var(--base-size); }
+
+    .container { padding: 10px 32px 8px; height: 100%; display: flex; flex-direction: column; }
+    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 8px 16px 10px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 4px; flex-shrink: 0; }
+    .header .left { opacity: .9; font-size: 1rem; }
+    .header .title { font-size: 2.2rem; letter-spacing: .7px; color: #c8e000; font-weight: 700; }
+    .header .right { text-align: right; font-size: 1rem; display: flex; align-items: center; gap: 12px; }
+
+    .btn { background: #0fb; color: #003; border: none; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 1rem; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn[disabled] { opacity: .6; cursor: not-allowed; }
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    .table-wrap { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: var(--num-size); }
+    th, td { padding: 6px 16px; text-align: right; white-space: nowrap; }
+    td { background: #000000; }
+    th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 800; font-size: var(--head-size); }
+    th.group { background: #0f6a70; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
+    /* Different header colors per block (3 group <th> elements: MTD, WTD, Daily) */
+    thead tr:first-child th.group:nth-of-type(1) { background: #0f6a70; }   /* MTD */
+    thead tr:first-child th.group:nth-of-type(2) { background: #154f7a; }   /* WTD */
+    thead tr:first-child th.group:nth-of-type(3) { background: #6a5b16; }   /* Daily */
+    /* Second header row block colors (rowspan on "Line" means this row has 12 th's) */
+    thead tr:nth-child(2) th:nth-child(1),
+    thead tr:nth-child(2) th:nth-child(2),
+    thead tr:nth-child(2) th:nth-child(3),
+    thead tr:nth-child(2) th:nth-child(4)   { background: #0f6a70; }  /* MTD */
+    thead tr:nth-child(2) th:nth-child(5),
+    thead tr:nth-child(2) th:nth-child(6),
+    thead tr:nth-child(2) th:nth-child(7),
+    thead tr:nth-child(2) th:nth-child(8)   { background: #154f7a; }  /* WTD */
+    thead tr:nth-child(2) th:nth-child(9),
+    thead tr:nth-child(2) th:nth-child(10),
+    thead tr:nth-child(2) th:nth-child(11),
+    thead tr:nth-child(2) th:nth-child(12)  { background: #6a5b16; }  /* Daily */
+    td:first-child, th:first-child { text-align: left; font-size: var(--line-name-size); }
+
+    /* Vertical separators between metric blocks (MTD / WTD / Daily) */
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(10), td:nth-child(10) {
+      border-left: 2px solid rgba(0, 0, 0, 0.55);
+    }
+
+    tr:nth-child(even) td { background: #000000; }
+    tr:hover td { background: rgba(255,255,255,0.06); }
+    .row-dark td:first-child { background: #000; }
+
+    .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    /* Delta colors - static positive/negative (text + left bar) */
+    .delta-pos { color: #9cf0a5; border-left: 3px solid rgba(40, 167, 69, 0.9); }
+    .delta-neg { color: #ffb3b3; border-left: 3px solid rgba(220, 53, 69, 0.95); }
+
+    .status { display: flex; gap: 18px; font-size: .95rem; color: #cde4e6; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; display: inline-block; }
+
+    .legend { margin-top: 6px; opacity: .9; font-size: 0.9rem; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <div class="header">
+        <div class="left">
+          <div class="badge"><span class="dot"></span> Static snapshot</div>
+        </div>
+        <div class="title">ADIENT LOZNICA PVS</div>
+        <div class="right">
+          <button id="refreshBtn" class="btn" onclick="manualRefresh()">Reload snapshot</button>
+          <div>
+            <div>Snapshot date: <span id="lastUp">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="pvsTable">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+// This placeholder will be replaced by generate_static_pvs.py
+const SNAPSHOT = {"success": true, "date": "2025-11-27", "rows": [{"code": "H_FG", "line": "BJA", "mtd": {"schedule": 12453, "production": 9280.0, "delta": -3173.0, "adherence_pct": -25.5}, "wtd": {"schedule": 2116, "production": 1500.0, "delta": -616.0, "adherence_pct": -29.1}, "daily": {"schedule": 529, "production": 300.0, "delta": -229.0, "adherence_pct": -43.3}}, {"code": "B_FG", "line": "BR223 - SEW", "mtd": {"schedule": 9147, "production": 8935.0, "delta": -212.0, "adherence_pct": -2.3}, "wtd": {"schedule": 1892, "production": 1848.0, "delta": -44.0, "adherence_pct": -2.3}, "daily": {"schedule": 473, "production": 412.0, "delta": -61.0, "adherence_pct": -12.9}}, {"code": "C_FG", "line": "CDPO - ASSY", "mtd": {"schedule": 18426, "production": 18474.0, "delta": 48.0, "adherence_pct": 0.3}, "wtd": {"schedule": 4692, "production": 4092.0, "delta": -600.0, "adherence_pct": -12.8}, "daily": {"schedule": 1173, "production": 978.0, "delta": -195.0, "adherence_pct": -16.6}}, {"code": "Z_FG", "line": "CDPO - SEW", "mtd": {"schedule": 18612, "production": 20158.0, "delta": 1546.0, "adherence_pct": 8.3}, "wtd": {"schedule": 4740, "production": 5306.0, "delta": 566.0, "adherence_pct": 11.9}, "daily": {"schedule": 1185, "production": 1360.0, "delta": 175.0, "adherence_pct": 14.8}}, {"code": "F_FG", "line": "FIAT - SEW", "mtd": {"schedule": 32823, "production": 30745.0, "delta": -2078.0, "adherence_pct": -6.3}, "wtd": {"schedule": 7940, "production": 7510.0, "delta": -430.0, "adherence_pct": -5.4}, "daily": {"schedule": 1985, "production": 1662.0, "delta": -323.0, "adherence_pct": -16.3}}, {"code": "L_FG", "line": "JLR - ASSY", "mtd": {"schedule": 2844, "production": 2523.0, "delta": -321.0, "adherence_pct": -11.3}, "wtd": {"schedule": 1220, "production": 960.0, "delta": -260.0, "adherence_pct": -21.3}, "daily": {"schedule": 305, "production": 320.0, "delta": 15.0, "adherence_pct": 4.9}}, {"code": "J_FG", "line": "JLR - SEW", "mtd": {"schedule": 2937, "production": 2428.0, "delta": -509.0, "adherence_pct": -17.3}, "wtd": {"schedule": 800, "production": 812.0, "delta": 12.0, "adherence_pct": 1.5}, "daily": {"schedule": 200, "production": 198.0, "delta": -2.0, "adherence_pct": -1.0}}, {"code": "K_FG", "line": "KIA - ASSY", "mtd": {"schedule": 4024, "production": 3982.0, "delta": -42.0, "adherence_pct": -1.0}, "wtd": {"schedule": 1696, "production": 1326.0, "delta": -370.0, "adherence_pct": -21.8}, "daily": {"schedule": 424, "production": 198.0, "delta": -226.0, "adherence_pct": -53.3}}, {"code": "Q_FG", "line": "KIA - SEW", "mtd": {"schedule": 5634, "production": 4726.0, "delta": -908.0, "adherence_pct": -16.1}, "wtd": {"schedule": 1536, "production": 1226.0, "delta": -310.0, "adherence_pct": -20.2}, "daily": {"schedule": 384, "production": 242.0, "delta": -142.0, "adherence_pct": -37.0}}, {"code": "U_FG", "line": "MAN", "mtd": {"schedule": 11781, "production": 23940.0, "delta": 12159.0, "adherence_pct": 103.2}, "wtd": {"schedule": 2920, "production": 5822.0, "delta": 2902.0, "adherence_pct": 99.4}, "daily": {"schedule": 730, "production": 1530.0, "delta": 800.0, "adherence_pct": 109.6}}, {"code": "M_FG", "line": "MMA - ASSY", "mtd": {"schedule": 62559, "production": 61303.0, "delta": -1256.0, "adherence_pct": -2.0}, "wtd": {"schedule": 16792, "production": 16206.0, "delta": -586.0, "adherence_pct": -3.5}, "daily": {"schedule": 4198, "production": 4273.0, "delta": 75.0, "adherence_pct": 1.8}}, {"code": "N_FG", "line": "MMA - SEW", "mtd": {"schedule": 58156, "production": 52616.0, "delta": -5540.0, "adherence_pct": -9.5}, "wtd": {"schedule": 15052, "production": 13658.0, "delta": -1394.0, "adherence_pct": -9.3}, "daily": {"schedule": 3763, "production": 3408.0, "delta": -355.0, "adherence_pct": -9.4}}, {"code": "OBS", "line": "OTHER", "mtd": {"schedule": 0, "production": 5.0, "delta": 5.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "O_FG", "line": "OV5X - ASSY", "mtd": {"schedule": 6368, "production": 6476.0, "delta": 108.0, "adherence_pct": 1.7}, "wtd": {"schedule": 1632, "production": 1668.0, "delta": 36.0, "adherence_pct": 2.2}, "daily": {"schedule": 408, "production": 576.0, "delta": 168.0, "adherence_pct": 41.2}}, {"code": "S_FG", "line": "OV5X - SEW", "mtd": {"schedule": 6681, "production": 6658.0, "delta": -23.0, "adherence_pct": -0.3}, "wtd": {"schedule": 1572, "production": 1716.0, "delta": 144.0, "adherence_pct": 9.2}, "daily": {"schedule": 393, "production": 468.0, "delta": 75.0, "adherence_pct": 19.1}}, {"code": "T_FG", "line": "P13A", "mtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "P_FG", "line": "PO426 - SEW", "mtd": {"schedule": 9361, "production": 8257.0, "delta": -1104.0, "adherence_pct": -11.8}, "wtd": {"schedule": 2196, "production": 2184.0, "delta": -12.0, "adherence_pct": -0.5}, "daily": {"schedule": 549, "production": 1284.0, "delta": 735.0, "adherence_pct": 133.9}}, {"code": "G_FG", "line": "PZ1D", "mtd": {"schedule": 178, "production": 1490.0, "delta": 1312.0, "adherence_pct": 300.0}, "wtd": {"schedule": 88, "production": 850.0, "delta": 762.0, "adherence_pct": 300.0}, "daily": {"schedule": 22, "production": 200.0, "delta": 178.0, "adherence_pct": 300.0}}, {"code": "R_FG", "line": "Renault", "mtd": {"schedule": 5225, "production": 11482.0, "delta": 6257.0, "adherence_pct": 119.8}, "wtd": {"schedule": 1200, "production": 2720.0, "delta": 1520.0, "adherence_pct": 126.7}, "daily": {"schedule": 300, "production": 680.0, "delta": 380.0, "adherence_pct": 126.7}}, {"code": "E_FG", "line": "SCANIA", "mtd": {"schedule": 5374, "production": 10007.0, "delta": 4633.0, "adherence_pct": 86.2}, "wtd": {"schedule": 1236, "production": 2664.0, "delta": 1428.0, "adherence_pct": 115.5}, "daily": {"schedule": 339, "production": 786.0, "delta": 447.0, "adherence_pct": 131.9}}, {"code": "V_FG", "line": "VOLVO- ASSY", "mtd": {"schedule": 65293, "production": 88748.0, "delta": 23455.0, "adherence_pct": 35.9}, "wtd": {"schedule": 15992, "production": 18218.0, "delta": 2226.0, "adherence_pct": 13.9}, "daily": {"schedule": 3998, "production": 4532.0, "delta": 534.0, "adherence_pct": 13.4}}, {"code": "A_FG", "line": "VOLVO- SEW", "mtd": {"schedule": 41723, "production": 24845.0, "delta": -16878.0, "adherence_pct": -40.5}, "wtd": {"schedule": 10624, "production": 6285.0, "delta": -4339.0, "adherence_pct": -40.8}, "daily": {"schedule": 2656, "production": 1675.0, "delta": -981.0, "adherence_pct": -36.9}}], "generated_at": "2025-11-28 14:33"};
+
+const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
+const fmtPct = n => `${(n??0).toFixed(0)}%`;
+
+function getAdherenceStyle(pct) {
+  const deviation = Math.abs(pct);
+  const maxDeviation = 50;
+  const intensity = Math.min(deviation / maxDeviation, 1);
+  if (pct >= 0) {
+    const r = Math.round(20 + (40 - 20) * intensity);
+    const g = Math.round(30 + (167 - 30) * intensity);
+    const b = Math.round(25 + (69 - 25) * intensity);
+    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#d4ffd4' : '#aaa'};`;
+  } else {
+    const r = Math.round(30 + (220 - 30) * intensity);
+    const g = Math.round(20 + (53 - 20) * intensity);
+    const b = Math.round(20 + (69 - 20) * intensity);
+    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#fff' : '#aaa'};`;
+  }
+}
+
+function deltaClass(d){ return d >= 0 ? 'delta-pos' : 'delta-neg'; }
+
+function buildHeader() {
+  const thead = document.getElementById('thead');
+  thead.innerHTML = `
+    <tr>
+      <th rowspan="2">Line</th>
+      <th class="group" colspan="4">MTD</th>
+      <th class="group" colspan="4">WTD</th>
+      <th class="group" colspan="4">Daily PVS</th>
+    </tr>
+    <tr>
+      <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
+      <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
+      <th>Sched</th><th>Prod</th><th>Delta</th><th>Adh %</th>
+    </tr>`;
+}
+
+function renderRows(rows){
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  const startName = 'BJA';
+  const endName = 'VOLVO- SEW';
+  const lines = rows.map(r => r.line);
+  const startIdx = lines.indexOf(startName);
+  const endIdx = lines.indexOf(endName);
+
+  for (let i = 0; i < rows.length; i++){
+    const r = rows[i];
+    const tr = document.createElement('tr');
+    if (startIdx !== -1 && endIdx !== -1 && i >= startIdx && i <= endIdx){
+      tr.classList.add('row-dark');
+    }
+
+    const c = (html, cls='', style='') => {
+      const td = document.createElement('td');
+      if(cls) td.className = cls;
+      if(style) td.style.cssText = style;
+      td.innerHTML = html;
+      return td;
+    };
+
+    tr.appendChild(c(r.line));
+
+    // MTD (only Adh % cell gets gradient background)
+    const mtdStyle = getAdherenceStyle(r.mtd.adherence_pct);
+    tr.appendChild(c(fmtInt(r.mtd.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.mtd.production), 'num'));
+    tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`));
+    tr.appendChild(c(fmtPct(r.mtd.adherence_pct), 'num', mtdStyle));
+
+    // WTD
+    const wtdStyle = getAdherenceStyle(r.wtd.adherence_pct);
+    tr.appendChild(c(fmtInt(r.wtd.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.wtd.production), 'num'));
+    tr.appendChild(c(fmtInt(r.wtd.delta), `num ${deltaClass(r.wtd.delta)}`));
+    tr.appendChild(c(fmtPct(r.wtd.adherence_pct), 'num', wtdStyle));
+
+    // Daily
+    const dailyStyle = getAdherenceStyle(r.daily.adherence_pct);
+    tr.appendChild(c(fmtInt(r.daily.schedule), 'num'));
+    tr.appendChild(c(fmtInt(r.daily.production), 'num'));
+    tr.appendChild(c(fmtInt(r.daily.delta), `num ${deltaClass(r.daily.delta)}`));
+    tr.appendChild(c(fmtPct(r.daily.adherence_pct), 'num', dailyStyle));
+
+    tb.appendChild(tr);
+  }
+}
+
+function loadFromSnapshot(){
+  const data = SNAPSHOT || {};
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const lastUpEl = document.getElementById('lastUp');
+
+  if (data.generated_at) {
+    lastUpEl.textContent = data.generated_at + ` (as of ${data.date || ''})`;
+  } else if (data.date) {
+    lastUpEl.textContent = data.date;
+  } else {
+    lastUpEl.textContent = 'n/a';
+  }
+
+  renderRows(rows);
+}
+
+function manualRefresh(){
+  // For static snapshot this just re-renders from embedded JSON
+  loadFromSnapshot();
+}
+
+buildHeader();
+loadFromSnapshot();
+</script>
+</body>
+</html>

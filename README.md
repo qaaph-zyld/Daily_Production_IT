@@ -85,20 +85,61 @@ All settings in `config/settings.json`:
 
 ---
 
+## Netlify Static Deployment (No VM Required)
+
+For hosting on Netlify without a VM:
+
+### One-Time Setup
+
+1. **Install Netlify CLI**:
+   ```bash
+   npm install -g netlify-cli
+   netlify login
+   ```
+
+2. **Initial deploy** (creates site):
+   ```bash
+   cd netlify_static
+   netlify deploy --prod --dir=.
+   ```
+   Note the site URL and ID for future deployments.
+
+3. **Install automated task** (optional):
+   ```powershell
+   # Run as Administrator
+   .\scripts\install_netlify_task.ps1 -NetlifySiteId "YOUR_SITE_ID"
+   ```
+
+### Manual Deployment
+
+Double-click `deploy_now.bat` or run:
+```bash
+python scripts/generate_static_pvs.py
+cd netlify_static && netlify deploy --prod --dir=.
+```
+
+### Automated Daily Deployment
+
+The scheduled task runs at **08:45 CET Mon-Fri**:
+1. Generates fresh snapshot from WH Receipt FY25.xlsx
+2. Deploys to Netlify automatically
+
+---
+
 ## Maintenance
 
 ```powershell
-# Service status
+# Service status (VM deployment)
 Get-Service AdientPVS
 
-# Task status
-Get-ScheduledTask -TaskName "AdientPVS_ExcelRefresh"
+# Netlify task status
+Get-ScheduledTask -TaskName "PVS_Netlify_Deploy"
 
-# Manual refresh
-.\scripts\refresh_excel_scheduled.ps1
+# Manual snapshot generation
+python scripts\generate_static_pvs.py
 
 # Logs
-Get-Content .\logs\excel_refresh.log -Tail 20
+Get-Content .\logs\netlify_deploy.log -Tail 20
 ```
 
 ---

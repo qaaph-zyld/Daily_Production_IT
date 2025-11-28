@@ -3,25 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Adient Loznica PVS</title>
+  <title>Adient Loznica PVS (Static)</title>
   <style>
     /* === TV-OPTIMIZED SIZING (65" 4K, 3840x2160) === */
     :root {
-      --base-size: 18px;
-      --head-size: 1.6rem;
-      --group-head-size: 1.8rem;
-      --num-size: 1.7rem;
-      --line-name-size: 1.4rem;
+      --base-size: 17px;
+      --head-size: 1.5rem;
+      --group-head-size: 1.7rem;
+      --num-size: 1.55rem;
+      --line-name-size: 1.3rem;
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; }
     body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: var(--base-size); }
 
-    .container { padding: 18px 36px 16px; height: 100%; display: flex; flex-direction: column; }
-    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 10px 18px 14px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .container { padding: 10px 32px 8px; height: 100%; display: flex; flex-direction: column; }
+    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 8px 16px 10px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    .header { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 8px; flex-shrink: 0; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 4px; flex-shrink: 0; }
     .header .left { opacity: .9; font-size: 1rem; }
     .header .title { font-size: 2.2rem; letter-spacing: .7px; color: #c8e000; font-weight: 700; }
     .header .right { text-align: right; font-size: 1rem; display: flex; align-items: center; gap: 12px; }
@@ -34,7 +34,7 @@
 
     .table-wrap { flex: 1; overflow: auto; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: var(--num-size); }
-    th, td { padding: 10px 18px; text-align: right; white-space: nowrap; }
+    th, td { padding: 6px 16px; text-align: right; white-space: nowrap; }
     td { background: #000000; }
     th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 800; font-size: var(--head-size); }
     th.group { background: #0f6a70; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
@@ -70,7 +70,7 @@
 
     .num { font-variant-numeric: tabular-nums; font-weight: 600; }
 
-    /* Delta colors - static positive/negative (text + left bar; band background comes from gradient) */
+    /* Delta colors - static positive/negative (text + left bar) */
     .delta-pos { color: #9cf0a5; border-left: 3px solid rgba(40, 167, 69, 0.9); }
     .delta-neg { color: #ffb3b3; border-left: 3px solid rgba(220, 53, 69, 0.95); }
 
@@ -86,14 +86,13 @@
     <div class="panel">
       <div class="header">
         <div class="left">
-          <div class="badge"><span class="dot"></span> Connected</div>
+          <div class="badge"><span class="dot"></span> Static snapshot</div>
         </div>
         <div class="title">ADIENT LOZNICA PVS</div>
         <div class="right">
-          <button id="refreshBtn" class="btn" onclick="manualRefresh()">Refresh now</button>
+          <button id="refreshBtn" class="btn" onclick="manualRefresh()">Reload snapshot</button>
           <div>
-            <div>Last update: <span id="lastUp">-</span></div>
-            <div>Next refresh: <span id="nextRef">-</span></div>
+            <div>Snapshot date: <span id="lastUp">-</span></div>
           </div>
         </div>
       </div>
@@ -104,41 +103,26 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
-      <div class="legend">Adherence% is clipped to a maximum band to avoid distortions on very small schedules. Page auto-reloads next business day at 08:45 (local time). Daily values show the last business day's data (on Sun/Mon, data includes Friday+Saturday).</div>
     </div>
   </div>
 
 <script>
+// This placeholder will be replaced by generate_static_pvs.py
+const SNAPSHOT = __PVS_SNAPSHOT_JSON__;
+
 const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
 const fmtPct = n => `${(n??0).toFixed(0)}%`;
 
-/**
- * Adherence color gradient:
- * - At 0% deviation: dark/neutral (near black)
- * - As deviation increases (positive or negative): color becomes brighter
- * - Positive deviation -> brighter green
- * - Negative deviation -> brighter red
- * Returns inline style string for background-color
- */
 function getAdherenceStyle(pct) {
-  // pct is the adherence percentage (e.g., -25 means 25% below target)
-  // We treat it as deviation from 0%
   const deviation = Math.abs(pct);
-  const maxDeviation = 50; // Full intensity at 50% deviation
-  const intensity = Math.min(deviation / maxDeviation, 1); // 0 to 1
-  
+  const maxDeviation = 50;
+  const intensity = Math.min(deviation / maxDeviation, 1);
   if (pct >= 0) {
-    // Positive: green gradient (dark -> bright green)
-    // At 0%: rgb(20, 30, 25) - very dark
-    // At 50%+: rgb(40, 167, 69) - bright green
     const r = Math.round(20 + (40 - 20) * intensity);
     const g = Math.round(30 + (167 - 30) * intensity);
     const b = Math.round(25 + (69 - 25) * intensity);
     return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#d4ffd4' : '#aaa'};`;
   } else {
-    // Negative: red gradient (dark -> bright red)
-    // At 0%: rgb(30, 20, 20) - very dark
-    // At -50%+: rgb(220, 53, 69) - bright red
     const r = Math.round(30 + (220 - 30) * intensity);
     const g = Math.round(20 + (53 - 20) * intensity);
     const b = Math.round(20 + (69 - 20) * intensity);
@@ -167,100 +151,77 @@ function buildHeader() {
 function renderRows(rows){
   const tb = document.getElementById('tbody');
   tb.innerHTML = '';
-  // Determine indices for the dark zone range [BJA .. VOLVO- SEW]
   const startName = 'BJA';
   const endName = 'VOLVO- SEW';
   const lines = rows.map(r => r.line);
   const startIdx = lines.indexOf(startName);
   const endIdx = lines.indexOf(endName);
-  
+
   for (let i = 0; i < rows.length; i++){
     const r = rows[i];
     const tr = document.createElement('tr');
     if (startIdx !== -1 && endIdx !== -1 && i >= startIdx && i <= endIdx){
       tr.classList.add('row-dark');
     }
-    
-    const c = (html, cls='', style='') => { 
-      const td = document.createElement('td'); 
-      if(cls) td.className = cls; 
+
+    const c = (html, cls='', style='') => {
+      const td = document.createElement('td');
+      if(cls) td.className = cls;
       if(style) td.style.cssText = style;
-      td.innerHTML = html; 
-      return td; 
+      td.innerHTML = html;
+      return td;
     };
-    
+
     tr.appendChild(c(r.line));
-    
+
     // MTD (only Adh % cell gets gradient background)
     const mtdStyle = getAdherenceStyle(r.mtd.adherence_pct);
     tr.appendChild(c(fmtInt(r.mtd.schedule), 'num'));
     tr.appendChild(c(fmtInt(r.mtd.production), 'num'));
     tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`));
     tr.appendChild(c(fmtPct(r.mtd.adherence_pct), 'num', mtdStyle));
-    
+
     // WTD
     const wtdStyle = getAdherenceStyle(r.wtd.adherence_pct);
     tr.appendChild(c(fmtInt(r.wtd.schedule), 'num'));
     tr.appendChild(c(fmtInt(r.wtd.production), 'num'));
     tr.appendChild(c(fmtInt(r.wtd.delta), `num ${deltaClass(r.wtd.delta)}`));
     tr.appendChild(c(fmtPct(r.wtd.adherence_pct), 'num', wtdStyle));
-    
+
     // Daily
     const dailyStyle = getAdherenceStyle(r.daily.adherence_pct);
     tr.appendChild(c(fmtInt(r.daily.schedule), 'num'));
     tr.appendChild(c(fmtInt(r.daily.production), 'num'));
     tr.appendChild(c(fmtInt(r.daily.delta), `num ${deltaClass(r.daily.delta)}`));
     tr.appendChild(c(fmtPct(r.daily.adherence_pct), 'num', dailyStyle));
-    
+
     tb.appendChild(tr);
   }
 }
 
-async function loadData(){
-  const btn = document.getElementById('refreshBtn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
-  try {
-    const res = await fetch('/api/pvs?_=' + Date.now());
-    const json = await res.json();
-    document.getElementById('lastUp').textContent = new Date().toLocaleString();
-    if (json && json.success){ renderRows(json.rows); }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Refresh now'; }
+function loadFromSnapshot(){
+  const data = SNAPSHOT || {};
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const lastUpEl = document.getElementById('lastUp');
+
+  if (data.generated_at) {
+    lastUpEl.textContent = data.generated_at + ` (as of ${data.date || ''})`;
+  } else if (data.date) {
+    lastUpEl.textContent = data.date;
+  } else {
+    lastUpEl.textContent = 'n/a';
   }
+
+  renderRows(rows);
 }
 
 function manualRefresh(){
-  loadData();
-}
-
-function nextWorkdayRefresh(){
-  // Next refresh at 08:45 CET, Mon-Fri only
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(8, 45, 0, 0);
-  if (now >= next) next.setDate(next.getDate() + 1);
-  // Skip weekends
-  while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
-  return next;
-}
-
-function scheduleRefresh(){
-  const next = nextWorkdayRefresh();
-  const ms = next.getTime() - Date.now();
-  const fmt = (ms) => {
-    const total = Math.floor(ms / 1000);
-    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60);
-    return `${h}h ${m}m`;
-  };
-  document.getElementById('nextRef').textContent = `${next.toLocaleString()} (${fmt(ms)})`;
-  setTimeout(() => location.reload(), Math.max(1000, ms));
+  // For static snapshot this just re-renders from embedded JSON
+  loadFromSnapshot();
 }
 
 buildHeader();
-loadData();
-scheduleRefresh();
+loadFromSnapshot();
 </script>
 </body>
 </html>

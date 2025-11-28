@@ -66,3 +66,6 @@ static/
 
 # Snapshots
 .snapshots/
+
+# Local Netlify folder
+.netlify

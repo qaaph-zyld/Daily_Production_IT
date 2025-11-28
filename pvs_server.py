@@ -53,6 +53,18 @@ PVS_RECALC_XLSX = os.getenv('PVS_RECALC_XLSX', 'false').strip().lower() in ('1',
 PVS_ADHERENCE_CLAMP = float(os.getenv('PVS_ADHERENCE_CLAMP', '300'))  # percent cap; values beyond are treated as 0%
 PVS_MAP_CSV = os.getenv('PVS_MAP_CSV', os.path.join('PVS', 'ProdLine_Project_Map.csv'))
 
+# External WH Receipt workbook (used to avoid Excel on VM)
+_DATA_SOURCES = SETTINGS.get('dataSources', {}) if isinstance(SETTINGS, dict) else {}
+PVS_EXTERNAL_XLSX = _DATA_SOURCES.get(
+    'externalSourceExcel',
+    r"G:\Logistics\6_Reporting\1_PVS\WH Receipt FY25.xlsx",
+)
+PVS_EXTERNAL_SHEET = _DATA_SOURCES.get('externalSheetName', 'Daily PVS')
+PVS_EXTERNAL_TARGET_LABEL = _DATA_SOURCES.get('externalTargetLabel', 'Target (LTP input)')
+
+_BEHAVIOR = SETTINGS.get('behavior', {}) if isinstance(SETTINGS, dict) else {}
+PVS_USE_WH_RECEIPT = bool(_BEHAVIOR.get('useWhReceiptForPlan', True))
+
 
 def norm_code(code: str) -> str:
     return (code or '').strip().upper()
@@ -112,6 +124,9 @@ def _parse_date_ddmmyyyy(s: str) -> date | None:
 
 def _coerce_header_to_date(col) -> date | None:
     try:
+        # Skip NaN/None early
+        if col is None or (isinstance(col, float) and pd.isna(col)):
+            return None
         # Direct types
         if isinstance(col, date) and not isinstance(col, datetime):
             return col
@@ -120,17 +135,21 @@ def _coerce_header_to_date(col) -> date | None:
         # Pandas Timestamp
         if 'Timestamp' in type(col).__name__:
             try:
+                if pd.isna(col):
+                    return None
                 return col.date()
             except Exception:
                 pass
-        # Excel serial number (float/int)
+        # Excel serial number (float/int) - must be a reasonable date range
         if isinstance(col, (int, float)):
-            try:
-                # Excel 1900 date system origin
-                d = pd.to_datetime(col, unit='D', origin='1899-12-30', errors='raise')
-                return d.date()
-            except Exception:
-                pass
+            # Excel dates for 2020-2030 are roughly 43831 to 47848
+            if 40000 < col < 50000:
+                try:
+                    d = pd.to_datetime(col, unit='D', origin='1899-12-30', errors='raise')
+                    return d.date()
+                except Exception:
+                    pass
+            return None
         # String formats: dd/mm/yyyy, ISO, or generic
         s = str(col).strip()
         d = _parse_date_ddmmyyyy(s)
@@ -214,6 +233,98 @@ def recalc_excel_workbook(path: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def load_planned_from_wh_receipt(path: str, sheet: str, target_label: str):
+    """Build planned schedule directly from WH Receipt workbook.
+
+    Reads the 'Daily PVS' (or configured) sheet and uses rows where the
+    classification column equals target_label (e.g. 'Target (LTP input)').
+
+    Returns dict: {prod_line_code: {date: qty_int}} where prod_line_code is the
+    production line code (e.g. 'B_FG', 'H_FG', ...).
+    """
+    planned: dict[str, dict[date, int]] = {}
+    if not path or not os.path.exists(path):
+        print(f"[LOAD-WH] ERROR: External XLSX not found: {path}")
+        return planned
+
+    print(f"[LOAD-WH] Loading WH Receipt data from: {path} (sheet={sheet})")
+
+    try:
+        df = pd.read_excel(path, sheet_name=sheet, header=None)
+    except Exception as e:
+        print(f"[LOAD-WH] ERROR opening workbook: {e}")
+        return planned
+
+    if df.empty:
+        print("[LOAD-WH] Sheet is empty")
+        return planned
+
+    # 1) Detect header row that contains dates across many columns
+    best_row = None
+    best_count = 0
+    max_check_rows = min(15, df.shape[0])
+    for r in range(max_check_rows):
+        row = df.iloc[r, :]
+        cnt = 0
+        for v in row:
+            if _coerce_header_to_date(v) is not None:
+                cnt += 1
+        if cnt > best_count:
+            best_count = cnt
+            best_row = r
+
+    if best_row is None or best_count < 3:
+        print(f"[LOAD-WH] Could not detect date header row (best_row={best_row}, count={best_count})")
+        return planned
+
+    print(f"[LOAD-WH] Using row {best_row} as date header with {best_count} date-like columns")
+    date_headers = df.iloc[best_row, :]
+    date_cols: list[date | None] = []
+    for v in date_headers:
+        date_cols.append(_coerce_header_to_date(v))
+
+    # 2) For each row where classification column == target_label, collect per-day values
+    # We observed layout: col0=Project, col1=Prod line, col2=label (e.g. 'Target (LTP input)')
+    label_col_idx = 2
+    prod_line_col_idx = 1
+
+    for r in range(df.shape[0]):
+        try:
+            label_raw = df.iat[r, label_col_idx]
+        except Exception:
+            continue
+        if str(label_raw).strip() != target_label:
+            continue
+
+        prod_line_raw = df.iat[r, prod_line_col_idx] if prod_line_col_idx < df.shape[1] else None
+        code = norm_code(str(prod_line_raw))
+        if not code:
+            continue
+
+        per_day: dict[date, int] = {}
+        row = df.iloc[r, :]
+        for j, d in enumerate(date_cols):
+            if d is None:
+                continue
+            if j >= len(row):
+                continue
+            val = row.iat[j]
+            try:
+                if pd.isna(val):
+                    q = 0
+                else:
+                    q = int(round(float(val)))
+            except Exception:
+                q = 0
+            if q:
+                per_day[d] = per_day.get(d, 0) + q
+
+        planned[code] = per_day
+
+    print(f"[LOAD-WH] Loaded {len(planned)} production lines from WH Receipt workbook")
+    return planned
 
 
 def load_planned_xlsx(path: str):
@@ -332,15 +443,23 @@ def compute_metrics():
     start_week = monday_of_week(as_of)
 
     print(f"[COMPUTE] Computing metrics for date: {as_of}")
-    print(f"[COMPUTE] PVS_RECALC_XLSX={PVS_RECALC_XLSX}, PVS_PLANNED_XLSX={PVS_PLANNED_XLSX}")
-    
-    if PVS_RECALC_XLSX:
-        print("[COMPUTE] Attempting Excel recalculation...")
-        recalc_excel_workbook(PVS_PLANNED_XLSX)
+    print(f"[COMPUTE] PVS_USE_WH_RECEIPT={PVS_USE_WH_RECEIPT}, PVS_RECALC_XLSX={PVS_RECALC_XLSX}, PVS_PLANNED_XLSX={PVS_PLANNED_XLSX}")
+
+    if PVS_USE_WH_RECEIPT:
+        print("[COMPUTE] Using WH Receipt workbook for planned schedule (no Excel COM)...")
+        planned = load_planned_from_wh_receipt(
+            PVS_EXTERNAL_XLSX,
+            PVS_EXTERNAL_SHEET,
+            PVS_EXTERNAL_TARGET_LABEL,
+        )
     else:
-        print("[COMPUTE] Excel recalc disabled - using cached values")
-    
-    planned = load_planned_xlsx(PVS_PLANNED_XLSX)
+        if PVS_RECALC_XLSX:
+            print("[COMPUTE] Attempting Excel recalculation of Planned_qtys.xlsx...")
+            recalc_excel_workbook(PVS_PLANNED_XLSX)
+        else:
+            print("[COMPUTE] Excel recalc disabled - using cached values in Planned_qtys.xlsx")
+
+        planned = load_planned_xlsx(PVS_PLANNED_XLSX)
     produced = fetch_produced_by_day(start_month, as_of)
     mapping = load_map_csv(PVS_MAP_CSV)
 

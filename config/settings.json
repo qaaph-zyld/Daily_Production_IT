@@ -99,8 +99,9 @@
 
   "behavior": {
     "adherenceClampPercent": 300,
-    "recalcExcelOnLoad": true,
+    "recalcExcelOnLoad": false,
     "showWeekendDataOnMonday": true,
+    "useWhReceiptForPlan": true,
     "description": "Dashboard behavior settings"
   },
 

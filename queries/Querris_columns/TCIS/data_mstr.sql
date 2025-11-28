@@ -1,0 +1,11 @@
+SELECT [data_product_qty] as [Set Qty]
+      ,[data_left]
+      ,[data_right]
+      ,[data_item_nbr_desc1] as [Item Description]
+      ,[data_model] as [Model]
+      ,[data_cust_name] as [Customer Name]
+      ,[data_set] as [Set]
+      ,[data_ifs] as [Item Number]
+      ,[data_workshop] as [Workshop]
+      
+  FROM [TCIS_MES2_265].[dbo].[data_mstr]

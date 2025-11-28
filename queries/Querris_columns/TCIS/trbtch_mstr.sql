@@ -1,0 +1,13 @@
+SELECT [trbtch_nbr]
+      ,[trbtch_prd_date]
+      ,[trbtch_prd_qty]
+      ,[trbtch_mat]
+      ,[trbtch_comp_ifs]
+      ,[trbtch_comp_qty]
+      ,[trbtch_sub_qty]
+      ,[trbtch_piid_name]
+      ,[trbtch_customer]
+      ,[trbtch_set]
+      ,[trbtch_workshop]
+   
+  FROM [TCIS_MES2_265].[dbo].[trbtch_mstr]

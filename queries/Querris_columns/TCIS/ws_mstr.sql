@@ -1,0 +1,5 @@
+SELECT [ws_name] as [Workshop Name]
+      ,[ws_desc] as [Workshop Description]
+      ,[ws_code] as [Workshop Code] 
+      ,[ws_loc_rcv] as [Workshop Receipt Location] 
+  FROM [TCIS_MES2_265].[dbo].[ws_mstr]
