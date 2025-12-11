@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Adient Loznica PVS (Static)</title>
   <style>
     /* === TV-OPTIMIZED SIZING (65" 4K, 3840x2160) === */
@@ -68,6 +71,22 @@
     tr:hover td { background: rgba(255,255,255,0.06); }
     .row-dark td:first-child { background: #000; }
 
+    /* Category row colors */
+    tr.cat-sew td { background: rgba(180, 60, 60, 0.25); }
+    tr.cat-sew:nth-child(even) td { background: rgba(160, 50, 50, 0.30); }
+    tr.cat-assy td { background: rgba(40, 100, 140, 0.25); }
+    tr.cat-assy:nth-child(even) td { background: rgba(30, 85, 125, 0.30); }
+    tr.cat-other td { background: rgba(80, 80, 80, 0.20); }
+    tr.cat-other:nth-child(even) td { background: rgba(60, 60, 60, 0.25); }
+
+    /* Category separator row */
+    tr.cat-separator td {
+      background: #0a3b41 !important;
+      height: 6px;
+      padding: 0;
+      border: none;
+    }
+
     .num { font-variant-numeric: tabular-nums; font-weight: 600; }
 
     /* Delta colors - static positive/negative (text + left bar) */
@@ -79,6 +98,70 @@
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; display: inline-block; }
 
     .legend { margin-top: 6px; opacity: .9; font-size: 0.9rem; flex-shrink: 0; }
+
+    /* Pie charts container */
+    .charts-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 20px;
+      margin-top: 10px;
+      flex-shrink: 0;
+    }
+    .chart-box {
+      text-align: center;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 10px 16px 12px;
+      min-width: 180px;
+    }
+    .chart-box h3 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      color: #c8e000;
+      font-weight: 700;
+    }
+    .chart-box.sew-chart h3 { color: #ff9999; }
+    .chart-box.assy-chart h3 { color: #7dc8e8; }
+    .chart-box.total-chart h3 { color: #c8e000; }
+    .pie-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+    }
+    .pie-svg {
+      transform: rotate(-90deg);
+    }
+    .pie-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 0.85rem;
+    }
+    .chart-legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .legend-dot.sched { background: #3498db; }
+    .legend-dot.prod { background: #2ecc71; }
   </style>
 </head>
 <body>
@@ -103,12 +186,49 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+
+      <!-- MTD Pie Charts -->
+      <div class="charts-row" id="chartsRow">
+        <div class="chart-box sew-chart">
+          <h3>SEW MTD</h3>
+          <div class="pie-container">
+            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSew"></svg>
+            <div class="pie-center" id="pieSewPct">-</div>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-dot sched"></span> Sched: <span id="sewSched">-</span></span>
+            <span><span class="legend-dot prod"></span> Prod: <span id="sewProd">-</span></span>
+          </div>
+        </div>
+        <div class="chart-box assy-chart">
+          <h3>ASSY MTD</h3>
+          <div class="pie-container">
+            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssy"></svg>
+            <div class="pie-center" id="pieAssyPct">-</div>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-dot sched"></span> Sched: <span id="assySched">-</span></span>
+            <span><span class="legend-dot prod"></span> Prod: <span id="assyProd">-</span></span>
+          </div>
+        </div>
+        <div class="chart-box total-chart">
+          <h3>TOTAL MTD</h3>
+          <div class="pie-container">
+            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieTotal"></svg>
+            <div class="pie-center" id="pieTotalPct">-</div>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-dot sched"></span> Sched: <span id="totalSched">-</span></span>
+            <span><span class="legend-dot prod"></span> Prod: <span id="totalProd">-</span></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
 <script>
 // This placeholder will be replaced by generate_static_pvs.py
-const SNAPSHOT = {"success": true, "date": "2025-11-27", "rows": [{"code": "H_FG", "line": "BJA", "mtd": {"schedule": 12453, "production": 9280.0, "delta": -3173.0, "adherence_pct": -25.5}, "wtd": {"schedule": 2116, "production": 1500.0, "delta": -616.0, "adherence_pct": -29.1}, "daily": {"schedule": 529, "production": 300.0, "delta": -229.0, "adherence_pct": -43.3}}, {"code": "B_FG", "line": "BR223 - SEW", "mtd": {"schedule": 9147, "production": 8935.0, "delta": -212.0, "adherence_pct": -2.3}, "wtd": {"schedule": 1892, "production": 1848.0, "delta": -44.0, "adherence_pct": -2.3}, "daily": {"schedule": 473, "production": 412.0, "delta": -61.0, "adherence_pct": -12.9}}, {"code": "C_FG", "line": "CDPO - ASSY", "mtd": {"schedule": 18426, "production": 18474.0, "delta": 48.0, "adherence_pct": 0.3}, "wtd": {"schedule": 4692, "production": 4092.0, "delta": -600.0, "adherence_pct": -12.8}, "daily": {"schedule": 1173, "production": 978.0, "delta": -195.0, "adherence_pct": -16.6}}, {"code": "Z_FG", "line": "CDPO - SEW", "mtd": {"schedule": 18612, "production": 20158.0, "delta": 1546.0, "adherence_pct": 8.3}, "wtd": {"schedule": 4740, "production": 5306.0, "delta": 566.0, "adherence_pct": 11.9}, "daily": {"schedule": 1185, "production": 1360.0, "delta": 175.0, "adherence_pct": 14.8}}, {"code": "F_FG", "line": "FIAT - SEW", "mtd": {"schedule": 32823, "production": 30745.0, "delta": -2078.0, "adherence_pct": -6.3}, "wtd": {"schedule": 7940, "production": 7510.0, "delta": -430.0, "adherence_pct": -5.4}, "daily": {"schedule": 1985, "production": 1662.0, "delta": -323.0, "adherence_pct": -16.3}}, {"code": "L_FG", "line": "JLR - ASSY", "mtd": {"schedule": 2844, "production": 2523.0, "delta": -321.0, "adherence_pct": -11.3}, "wtd": {"schedule": 1220, "production": 960.0, "delta": -260.0, "adherence_pct": -21.3}, "daily": {"schedule": 305, "production": 320.0, "delta": 15.0, "adherence_pct": 4.9}}, {"code": "J_FG", "line": "JLR - SEW", "mtd": {"schedule": 2937, "production": 2428.0, "delta": -509.0, "adherence_pct": -17.3}, "wtd": {"schedule": 800, "production": 812.0, "delta": 12.0, "adherence_pct": 1.5}, "daily": {"schedule": 200, "production": 198.0, "delta": -2.0, "adherence_pct": -1.0}}, {"code": "K_FG", "line": "KIA - ASSY", "mtd": {"schedule": 4024, "production": 3982.0, "delta": -42.0, "adherence_pct": -1.0}, "wtd": {"schedule": 1696, "production": 1326.0, "delta": -370.0, "adherence_pct": -21.8}, "daily": {"schedule": 424, "production": 198.0, "delta": -226.0, "adherence_pct": -53.3}}, {"code": "Q_FG", "line": "KIA - SEW", "mtd": {"schedule": 5634, "production": 4726.0, "delta": -908.0, "adherence_pct": -16.1}, "wtd": {"schedule": 1536, "production": 1226.0, "delta": -310.0, "adherence_pct": -20.2}, "daily": {"schedule": 384, "production": 242.0, "delta": -142.0, "adherence_pct": -37.0}}, {"code": "U_FG", "line": "MAN", "mtd": {"schedule": 11781, "production": 23940.0, "delta": 12159.0, "adherence_pct": 103.2}, "wtd": {"schedule": 2920, "production": 5822.0, "delta": 2902.0, "adherence_pct": 99.4}, "daily": {"schedule": 730, "production": 1530.0, "delta": 800.0, "adherence_pct": 109.6}}, {"code": "M_FG", "line": "MMA - ASSY", "mtd": {"schedule": 62559, "production": 61303.0, "delta": -1256.0, "adherence_pct": -2.0}, "wtd": {"schedule": 16792, "production": 16206.0, "delta": -586.0, "adherence_pct": -3.5}, "daily": {"schedule": 4198, "production": 4273.0, "delta": 75.0, "adherence_pct": 1.8}}, {"code": "N_FG", "line": "MMA - SEW", "mtd": {"schedule": 58156, "production": 52616.0, "delta": -5540.0, "adherence_pct": -9.5}, "wtd": {"schedule": 15052, "production": 13658.0, "delta": -1394.0, "adherence_pct": -9.3}, "daily": {"schedule": 3763, "production": 3408.0, "delta": -355.0, "adherence_pct": -9.4}}, {"code": "OBS", "line": "OTHER", "mtd": {"schedule": 0, "production": 5.0, "delta": 5.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "O_FG", "line": "OV5X - ASSY", "mtd": {"schedule": 6368, "production": 6476.0, "delta": 108.0, "adherence_pct": 1.7}, "wtd": {"schedule": 1632, "production": 1668.0, "delta": 36.0, "adherence_pct": 2.2}, "daily": {"schedule": 408, "production": 576.0, "delta": 168.0, "adherence_pct": 41.2}}, {"code": "S_FG", "line": "OV5X - SEW", "mtd": {"schedule": 6681, "production": 6658.0, "delta": -23.0, "adherence_pct": -0.3}, "wtd": {"schedule": 1572, "production": 1716.0, "delta": 144.0, "adherence_pct": 9.2}, "daily": {"schedule": 393, "production": 468.0, "delta": 75.0, "adherence_pct": 19.1}}, {"code": "T_FG", "line": "P13A", "mtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "P_FG", "line": "PO426 - SEW", "mtd": {"schedule": 9361, "production": 8257.0, "delta": -1104.0, "adherence_pct": -11.8}, "wtd": {"schedule": 2196, "production": 2184.0, "delta": -12.0, "adherence_pct": -0.5}, "daily": {"schedule": 549, "production": 1284.0, "delta": 735.0, "adherence_pct": 133.9}}, {"code": "G_FG", "line": "PZ1D", "mtd": {"schedule": 178, "production": 1490.0, "delta": 1312.0, "adherence_pct": 300.0}, "wtd": {"schedule": 88, "production": 850.0, "delta": 762.0, "adherence_pct": 300.0}, "daily": {"schedule": 22, "production": 200.0, "delta": 178.0, "adherence_pct": 300.0}}, {"code": "R_FG", "line": "Renault", "mtd": {"schedule": 5225, "production": 11482.0, "delta": 6257.0, "adherence_pct": 119.8}, "wtd": {"schedule": 1200, "production": 2720.0, "delta": 1520.0, "adherence_pct": 126.7}, "daily": {"schedule": 300, "production": 680.0, "delta": 380.0, "adherence_pct": 126.7}}, {"code": "E_FG", "line": "SCANIA", "mtd": {"schedule": 5374, "production": 10007.0, "delta": 4633.0, "adherence_pct": 86.2}, "wtd": {"schedule": 1236, "production": 2664.0, "delta": 1428.0, "adherence_pct": 115.5}, "daily": {"schedule": 339, "production": 786.0, "delta": 447.0, "adherence_pct": 131.9}}, {"code": "V_FG", "line": "VOLVO- ASSY", "mtd": {"schedule": 65293, "production": 88748.0, "delta": 23455.0, "adherence_pct": 35.9}, "wtd": {"schedule": 15992, "production": 18218.0, "delta": 2226.0, "adherence_pct": 13.9}, "daily": {"schedule": 3998, "production": 4532.0, "delta": 534.0, "adherence_pct": 13.4}}, {"code": "A_FG", "line": "VOLVO- SEW", "mtd": {"schedule": 41723, "production": 24845.0, "delta": -16878.0, "adherence_pct": -40.5}, "wtd": {"schedule": 10624, "production": 6285.0, "delta": -4339.0, "adherence_pct": -40.8}, "daily": {"schedule": 2656, "production": 1675.0, "delta": -981.0, "adherence_pct": -36.9}}], "generated_at": "2025-11-28 14:33"};
+const SNAPSHOT = {"success": true, "date": "2025-12-10", "rows": [{"code": "B_FG", "line": "BR223 - SEW", "category": "SEW", "mtd": {"schedule": 4086, "production": 4118.0, "delta": 32.0, "adherence_pct": 0.8}, "wtd": {"schedule": 1536, "production": 1496.0, "delta": -40.0, "adherence_pct": -2.6}, "daily": {"schedule": 512, "production": 648.0, "delta": 136.0, "adherence_pct": 26.6}}, {"code": "Z_FG", "line": "CDPO - SEW", "category": "SEW", "mtd": {"schedule": 8994, "production": 9304.0, "delta": 310.0, "adherence_pct": 3.4}, "wtd": {"schedule": 3069, "production": 3030.0, "delta": -39.0, "adherence_pct": -1.3}, "daily": {"schedule": 1023, "production": 1108.0, "delta": 85.0, "adherence_pct": 8.3}}, {"code": "F_FG", "line": "FIAT - SEW", "category": "SEW", "mtd": {"schedule": 15557, "production": 15459.0, "delta": -98.0, "adherence_pct": -0.6}, "wtd": {"schedule": 5832, "production": 5892.0, "delta": 60.0, "adherence_pct": 1.0}, "daily": {"schedule": 1944, "production": 1980.0, "delta": 36.0, "adherence_pct": 1.9}}, {"code": "J_FG", "line": "JLR - SEW", "category": "SEW", "mtd": {"schedule": 1294, "production": 1662.0, "delta": 368.0, "adherence_pct": 28.4}, "wtd": {"schedule": 504, "production": 804.0, "delta": 300.0, "adherence_pct": 59.5}, "daily": {"schedule": 168, "production": 308.0, "delta": 140.0, "adherence_pct": 83.3}}, {"code": "Q_FG", "line": "KIA - SEW", "category": "SEW", "mtd": {"schedule": 393, "production": 350.0, "delta": -43.0, "adherence_pct": -10.9}, "wtd": {"schedule": 393, "production": 350.0, "delta": -43.0, "adherence_pct": -10.9}, "daily": {"schedule": 131, "production": 160.0, "delta": 29.0, "adherence_pct": 22.1}}, {"code": "N_FG", "line": "MMA - SEW", "category": "SEW", "mtd": {"schedule": 32357, "production": 28086.0, "delta": -4271.0, "adherence_pct": -13.2}, "wtd": {"schedule": 13062, "production": 10773.0, "delta": -2289.0, "adherence_pct": -17.5}, "daily": {"schedule": 4354, "production": 3535.0, "delta": -819.0, "adherence_pct": -18.8}}, {"code": "S_FG", "line": "OV5X - SEW", "category": "SEW", "mtd": {"schedule": 2566, "production": 3234.0, "delta": 668.0, "adherence_pct": 26.0}, "wtd": {"schedule": 996, "production": 1130.0, "delta": 134.0, "adherence_pct": 13.5}, "daily": {"schedule": 332, "production": 350.0, "delta": 18.0, "adherence_pct": 5.4}}, {"code": "P_FG", "line": "PO426 - SEW", "category": "SEW", "mtd": {"schedule": 3356, "production": 3424.0, "delta": 68.0, "adherence_pct": 2.0}, "wtd": {"schedule": 1086, "production": 1312.0, "delta": 226.0, "adherence_pct": 20.8}, "daily": {"schedule": 362, "production": 376.0, "delta": 14.0, "adherence_pct": 3.9}}, {"code": "A_FG", "line": "VOLVO- SEW", "category": "SEW", "mtd": {"schedule": 14982, "production": 11680.0, "delta": -3302.0, "adherence_pct": -22.0}, "wtd": {"schedule": 6822, "production": 3935.0, "delta": -2887.0, "adherence_pct": -42.3}, "daily": {"schedule": 2274, "production": 1305.0, "delta": -969.0, "adherence_pct": -42.6}}, {"code": "C_FG", "line": "CDPO - ASSY", "category": "ASSY", "mtd": {"schedule": 8834, "production": 8484.0, "delta": -350.0, "adherence_pct": -4.0}, "wtd": {"schedule": 3519, "production": 3042.0, "delta": -477.0, "adherence_pct": -13.6}, "daily": {"schedule": 1173, "production": 888.0, "delta": -285.0, "adherence_pct": -24.3}}, {"code": "L_FG", "line": "JLR - ASSY", "category": "ASSY", "mtd": {"schedule": 1624, "production": 2240.0, "delta": 616.0, "adherence_pct": 37.9}, "wtd": {"schedule": 609, "production": 768.0, "delta": 159.0, "adherence_pct": 26.1}, "daily": {"schedule": 203, "production": 320.0, "delta": 117.0, "adherence_pct": 57.6}}, {"code": "K_FG", "line": "KIA - ASSY", "category": "ASSY", "mtd": {"schedule": 309, "production": 1266.0, "delta": 957.0, "adherence_pct": 300.0}, "wtd": {"schedule": 309, "production": 756.0, "delta": 447.0, "adherence_pct": 144.7}, "daily": {"schedule": 103, "production": 288.0, "delta": 185.0, "adherence_pct": 179.6}}, {"code": "M_FG", "line": "MMA - ASSY", "category": "ASSY", "mtd": {"schedule": 31437, "production": 35367.0, "delta": 3930.0, "adherence_pct": 12.5}, "wtd": {"schedule": 12162, "production": 14107.0, "delta": 1945.0, "adherence_pct": 16.0}, "daily": {"schedule": 4054, "production": 4365.0, "delta": 311.0, "adherence_pct": 7.7}}, {"code": "O_FG", "line": "OV5X - ASSY", "category": "ASSY", "mtd": {"schedule": 3051, "production": 3252.0, "delta": 201.0, "adherence_pct": 6.6}, "wtd": {"schedule": 1011, "production": 1032.0, "delta": 21.0, "adherence_pct": 2.1}, "daily": {"schedule": 337, "production": 240.0, "delta": -97.0, "adherence_pct": -28.8}}, {"code": "V_FG", "line": "VOLVO- ASSY", "category": "ASSY", "mtd": {"schedule": 28121, "production": 34843.0, "delta": 6722.0, "adherence_pct": 23.9}, "wtd": {"schedule": 11076, "production": 11785.0, "delta": 709.0, "adherence_pct": 6.4}, "daily": {"schedule": 3692, "production": 3982.0, "delta": 290.0, "adherence_pct": 7.9}}, {"code": "H_FG", "line": "BJA", "category": "OTHER", "mtd": {"schedule": 0, "production": 2020.0, "delta": 2020.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 2020.0, "delta": 2020.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 300.0, "delta": 300.0, "adherence_pct": 0.0}}, {"code": "U_FG", "line": "MAN", "category": "OTHER", "mtd": {"schedule": 4640, "production": 9883.0, "delta": 5243.0, "adherence_pct": 113.0}, "wtd": {"schedule": 1740, "production": 3487.0, "delta": 1747.0, "adherence_pct": 100.4}, "daily": {"schedule": 580, "production": 1114.0, "delta": 534.0, "adherence_pct": 92.1}}, {"code": "T_FG", "line": "P13A", "category": "OTHER", "mtd": {"schedule": 0, "production": 24.0, "delta": 24.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "G_FG", "line": "PZ1D", "category": "OTHER", "mtd": {"schedule": 298, "production": 3410.0, "delta": 3112.0, "adherence_pct": 300.0}, "wtd": {"schedule": 183, "production": 1510.0, "delta": 1327.0, "adherence_pct": 300.0}, "daily": {"schedule": 61, "production": 390.0, "delta": 329.0, "adherence_pct": 300.0}}, {"code": "0000", "line": "Pre-production", "category": "OTHER", "mtd": {"schedule": 0, "production": 23.0, "delta": 23.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "R_FG", "line": "Renault", "category": "OTHER", "mtd": {"schedule": 2504, "production": 5095.0, "delta": 2591.0, "adherence_pct": 103.5}, "wtd": {"schedule": 939, "production": 1900.0, "delta": 961.0, "adherence_pct": 102.3}, "daily": {"schedule": 313, "production": 610.0, "delta": 297.0, "adherence_pct": 94.9}}, {"code": "E_FG", "line": "SCANIA", "category": "OTHER", "mtd": {"schedule": 1995, "production": 3560.0, "delta": 1565.0, "adherence_pct": 78.4}, "wtd": {"schedule": 690, "production": 1233.0, "delta": 543.0, "adherence_pct": 78.7}, "daily": {"schedule": 230, "production": 391.0, "delta": 161.0, "adherence_pct": 70.0}}], "generated_at": "2025-12-11 09:46"};
 
 const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
 const fmtPct = n => `${(n??0).toFixed(0)}%`;
@@ -151,18 +271,27 @@ function buildHeader() {
 function renderRows(rows){
   const tb = document.getElementById('tbody');
   tb.innerHTML = '';
-  const startName = 'BJA';
-  const endName = 'VOLVO- SEW';
-  const lines = rows.map(r => r.line);
-  const startIdx = lines.indexOf(startName);
-  const endIdx = lines.indexOf(endName);
+
+  let lastCategory = null;
 
   for (let i = 0; i < rows.length; i++){
     const r = rows[i];
-    const tr = document.createElement('tr');
-    if (startIdx !== -1 && endIdx !== -1 && i >= startIdx && i <= endIdx){
-      tr.classList.add('row-dark');
+    const cat = r.category || 'OTHER';
+
+    // Insert separator row when category changes
+    if (lastCategory && cat !== lastCategory) {
+      const sepTr = document.createElement('tr');
+      sepTr.classList.add('cat-separator');
+      for (let j = 0; j < 13; j++) {
+        sepTr.appendChild(document.createElement('td'));
+      }
+      tb.appendChild(sepTr);
     }
+    lastCategory = cat;
+
+    const tr = document.createElement('tr');
+    // Apply category class for coloring
+    tr.classList.add('cat-' + cat.toLowerCase());
 
     const c = (html, cls='', style='') => {
       const td = document.createElement('td');
@@ -199,9 +328,74 @@ function renderRows(rows){
   }
 }
 
+// Draw a donut/pie chart showing production vs schedule
+function drawPieChart(svgId, centerId, sched, prod) {
+  const svg = document.getElementById(svgId);
+  const centerEl = document.getElementById(centerId);
+  if (!svg || !centerEl) return;
+
+  svg.innerHTML = '';
+  const cx = 60, cy = 60, r = 50, strokeWidth = 16;
+  const circumference = 2 * Math.PI * r;
+
+  // Background circle (schedule = 100%)
+  const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bgCircle.setAttribute('cx', cx);
+  bgCircle.setAttribute('cy', cy);
+  bgCircle.setAttribute('r', r);
+  bgCircle.setAttribute('fill', 'none');
+  bgCircle.setAttribute('stroke', '#3498db');
+  bgCircle.setAttribute('stroke-width', strokeWidth);
+  svg.appendChild(bgCircle);
+
+  // Production arc
+  const pct = sched > 0 ? Math.min(prod / sched, 1.5) : 0; // cap at 150%
+  const prodArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  prodArc.setAttribute('cx', cx);
+  prodArc.setAttribute('cy', cy);
+  prodArc.setAttribute('r', r);
+  prodArc.setAttribute('fill', 'none');
+  prodArc.setAttribute('stroke', pct >= 1 ? '#2ecc71' : '#e74c3c');
+  prodArc.setAttribute('stroke-width', strokeWidth);
+  prodArc.setAttribute('stroke-dasharray', `${circumference * Math.min(pct, 1)} ${circumference}`);
+  prodArc.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(prodArc);
+
+  // Center percentage text
+  const displayPct = sched > 0 ? Math.round((prod / sched) * 100) : 0;
+  centerEl.textContent = displayPct + '%';
+  centerEl.style.color = displayPct >= 100 ? '#2ecc71' : '#e74c3c';
+}
+
+function renderPieCharts(totals) {
+  if (!totals) return;
+
+  // SEW
+  const sewS = totals.sew?.schedule || 0;
+  const sewP = totals.sew?.production || 0;
+  drawPieChart('pieSew', 'pieSewPct', sewS, sewP);
+  document.getElementById('sewSched').textContent = fmtInt(sewS);
+  document.getElementById('sewProd').textContent = fmtInt(sewP);
+
+  // ASSY
+  const assyS = totals.assy?.schedule || 0;
+  const assyP = totals.assy?.production || 0;
+  drawPieChart('pieAssy', 'pieAssyPct', assyS, assyP);
+  document.getElementById('assySched').textContent = fmtInt(assyS);
+  document.getElementById('assyProd').textContent = fmtInt(assyP);
+
+  // Total
+  const totalS = totals.total?.schedule || 0;
+  const totalP = totals.total?.production || 0;
+  drawPieChart('pieTotal', 'pieTotalPct', totalS, totalP);
+  document.getElementById('totalSched').textContent = fmtInt(totalS);
+  document.getElementById('totalProd').textContent = fmtInt(totalP);
+}
+
 function loadFromSnapshot(){
   const data = SNAPSHOT || {};
   const rows = Array.isArray(data.rows) ? data.rows : [];
+  const totals = data.totals || null;
   const lastUpEl = document.getElementById('lastUp');
 
   if (data.generated_at) {
@@ -213,6 +407,7 @@ function loadFromSnapshot(){
   }
 
   renderRows(rows);
+  renderPieCharts(totals);
 }
 
 function manualRefresh(){
@@ -222,6 +417,17 @@ function manualRefresh(){
 
 buildHeader();
 loadFromSnapshot();
+
+// Auto-reload the page every 30 minutes to pick up new snapshots
+const RELOAD_INTERVAL_MS = 30 * 60 * 1000;
+setTimeout(function(){
+  try {
+    const url = window.location.pathname + '?t=' + Date.now();
+    window.location.replace(url);
+  } catch (e) {
+    window.location.reload();
+  }
+}, RELOAD_INTERVAL_MS);
 </script>
 </body>
 </html>

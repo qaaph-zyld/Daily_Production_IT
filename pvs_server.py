@@ -48,10 +48,20 @@ FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
 PVS_PORT = int(os.getenv('PVS_PORT', '5051'))
 
 # PVS config
-PVS_PLANNED_XLSX = os.getenv('PVS_PLANNED_XLSX', os.path.join('PVS', 'Planned_qtys.xlsx'))
+_BASE_DIR = os.path.dirname(__file__)
+_planned_default = os.path.join('PVS', 'Planned_qtys.xlsx')
+_map_default = os.path.join('PVS', 'ProdLine_Project_Map.csv')
+
+PVS_PLANNED_XLSX = os.getenv('PVS_PLANNED_XLSX', _planned_default)
+if not os.path.isabs(PVS_PLANNED_XLSX):
+    PVS_PLANNED_XLSX = os.path.join(_BASE_DIR, PVS_PLANNED_XLSX)
+
 PVS_RECALC_XLSX = os.getenv('PVS_RECALC_XLSX', 'false').strip().lower() in ('1', 'true', 'yes')
 PVS_ADHERENCE_CLAMP = float(os.getenv('PVS_ADHERENCE_CLAMP', '300'))  # percent cap; values beyond are treated as 0%
-PVS_MAP_CSV = os.getenv('PVS_MAP_CSV', os.path.join('PVS', 'ProdLine_Project_Map.csv'))
+
+PVS_MAP_CSV = os.getenv('PVS_MAP_CSV', _map_default)
+if not os.path.isabs(PVS_MAP_CSV):
+    PVS_MAP_CSV = os.path.join(_BASE_DIR, PVS_MAP_CSV)
 
 # External WH Receipt workbook (used to avoid Excel on VM)
 _DATA_SOURCES = SETTINGS.get('dataSources', {}) if isinstance(SETTINGS, dict) else {}
@@ -498,9 +508,19 @@ def compute_metrics():
                 return -PVS_ADHERENCE_CLAMP
             return pct
 
+        # Determine category (SEW, ASSY, or OTHER)
+        disp_upper = disp.upper()
+        if 'SEW' in disp_upper:
+            category = 'SEW'
+        elif 'ASSY' in disp_upper:
+            category = 'ASSY'
+        else:
+            category = 'OTHER'
+
         rows.append({
             'code': code,
             'line': disp,
+            'category': category,
             'mtd': {
                 'schedule': plan_mtd,
                 'production': round(prod_mtd, 2),
@@ -523,13 +543,32 @@ def compute_metrics():
             }
         })
 
-    # Sort by display line
-    rows.sort(key=lambda r: r['line'])
+    # Sort: SEW first, then ASSY, then OTHER; within each category sort by line name
+    category_order = {'SEW': 0, 'ASSY': 1, 'OTHER': 2}
+    rows.sort(key=lambda r: (category_order.get(r['category'], 2), r['line']))
+
+    # Compute totals for pie charts (MTD only)
+    totals = {
+        'sew': {'schedule': 0, 'production': 0},
+        'assy': {'schedule': 0, 'production': 0},
+        'total': {'schedule': 0, 'production': 0},
+    }
+    for r in rows:
+        cat = r['category']
+        totals['total']['schedule'] += r['mtd']['schedule']
+        totals['total']['production'] += r['mtd']['production']
+        if cat == 'SEW':
+            totals['sew']['schedule'] += r['mtd']['schedule']
+            totals['sew']['production'] += r['mtd']['production']
+        elif cat == 'ASSY':
+            totals['assy']['schedule'] += r['mtd']['schedule']
+            totals['assy']['production'] += r['mtd']['production']
 
     return {
         'success': True,
         'date': as_of.strftime('%Y-%m-%d'),
         'rows': rows,
+        'totals': totals,
     }
 
 
