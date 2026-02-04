@@ -1,7 +1,0 @@
-SELECT [ad_addr] as [Supplier]
-      ,[ad_name] as [Supplier Name]
-      ,[ad_line1] as [Supplier Address]
-      ,[ad_city] as [Supplier City]
-      ,[ad_country] as [Supplier Country]
-      ,[ad_ctry] as [Country Abreviation]
-  FROM [QADEE2798].[dbo].[ad_mstr]

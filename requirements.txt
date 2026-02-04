@@ -6,3 +6,5 @@ waitress==2.1.2
 pandas==2.3.2
 openpyxl==3.1.5
 pywin32==311
+matplotlib==3.8.4
+Pillow==10.4.0

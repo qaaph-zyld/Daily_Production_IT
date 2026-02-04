@@ -10,21 +10,24 @@
   <style>
     /* === TV-OPTIMIZED SIZING (65" 4K, 3840x2160) === */
     :root {
-      --base-size: 17px;
-      --head-size: 1.5rem;
-      --group-head-size: 1.7rem;
-      --num-size: 1.55rem;
-      --line-name-size: 1.3rem;
+      --base-size: 15px;
+      --head-size: 1.35rem;
+      --group-head-size: 1.5rem;
+      --num-size: 1.35rem;
+      --line-name-size: 1.15rem;
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; }
     body { margin: 0; font-family: Segoe UI, Roboto, Arial, sans-serif; background: #0a3b41; color: #e8f1f2; font-size: var(--base-size); }
 
-    .container { padding: 10px 32px 8px; height: 100%; display: flex; flex-direction: column; }
-    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 8px 16px 10px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .container { padding: 8px 24px 6px; height: 100%; display: flex; flex-direction: column; }
+    .panel { background: #0e4b52; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); padding: 6px 12px 8px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 4px; flex-shrink: 0; }
+    .page { display: none; flex: 1; display: none; flex-direction: column; }
+    .page.active { display: flex; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 2px; flex-shrink: 0; }
     .header .left { opacity: .9; font-size: 1rem; }
     .header .title { font-size: 2.2rem; letter-spacing: .7px; color: #c8e000; font-weight: 700; }
     .header .right { text-align: right; font-size: 1rem; display: flex; align-items: center; gap: 12px; }
@@ -37,7 +40,7 @@
 
     .table-wrap { flex: 1; overflow: auto; }
     table { width: 100%; border-collapse: separate; border-spacing: 0; background: #08343a; border-radius: 10px; font-size: var(--num-size); }
-    th, td { padding: 6px 16px; text-align: right; white-space: nowrap; }
+    th, td { padding: 4px 8px; text-align: right; white-space: nowrap; }
     td { background: #000000; }
     th { position: sticky; top: 0; z-index: 2; background: #0f5560; color: #e3f2f4; font-weight: 800; font-size: var(--head-size); }
     th.group { background: #0f6a70; color: #d7eced; text-align: center; font-weight: 900; font-size: var(--group-head-size); }
@@ -45,25 +48,26 @@
     thead tr:first-child th.group:nth-of-type(1) { background: #0f6a70; }   /* MTD */
     thead tr:first-child th.group:nth-of-type(2) { background: #154f7a; }   /* WTD */
     thead tr:first-child th.group:nth-of-type(3) { background: #6a5b16; }   /* Daily */
-    /* Second header row block colors (rowspan on "Line" means this row has 12 th's) */
+    /* Second header row block colors (rowspan on "Line" means this row has 14 th's after adding OLK columns) */
     thead tr:nth-child(2) th:nth-child(1),
     thead tr:nth-child(2) th:nth-child(2),
     thead tr:nth-child(2) th:nth-child(3),
-    thead tr:nth-child(2) th:nth-child(4)   { background: #0f6a70; }  /* MTD */
-    thead tr:nth-child(2) th:nth-child(5),
+    thead tr:nth-child(2) th:nth-child(4),
+    thead tr:nth-child(2) th:nth-child(5)   { background: #0f6a70; }
     thead tr:nth-child(2) th:nth-child(6),
     thead tr:nth-child(2) th:nth-child(7),
-    thead tr:nth-child(2) th:nth-child(8)   { background: #154f7a; }  /* WTD */
-    thead tr:nth-child(2) th:nth-child(9),
+    thead tr:nth-child(2) th:nth-child(8),
+    thead tr:nth-child(2) th:nth-child(9)  { background: #154f7a; }
     thead tr:nth-child(2) th:nth-child(10),
     thead tr:nth-child(2) th:nth-child(11),
-    thead tr:nth-child(2) th:nth-child(12)  { background: #6a5b16; }  /* Daily */
+    thead tr:nth-child(2) th:nth-child(12),
+    thead tr:nth-child(2) th:nth-child(13)  { background: #6a5b16; }
     td:first-child, th:first-child { text-align: left; font-size: var(--line-name-size); }
 
     /* Vertical separators between metric blocks (MTD / WTD / Daily) */
     th:nth-child(2), td:nth-child(2),
-    th:nth-child(6), td:nth-child(6),
-    th:nth-child(10), td:nth-child(10) {
+    th:nth-child(7), td:nth-child(7),
+    th:nth-child(11), td:nth-child(11) {
       border-left: 2px solid rgba(0, 0, 0, 0.55);
     }
 
@@ -104,8 +108,8 @@
       display: flex;
       justify-content: space-around;
       align-items: flex-start;
-      gap: 20px;
-      margin-top: 10px;
+      gap: 18px;
+      margin-top: 8px;
       flex-shrink: 0;
     }
     .chart-box {
@@ -113,32 +117,36 @@
       background: rgba(0,0,0,0.2);
       border-radius: 10px;
       padding: 10px 16px 12px;
-      min-width: 180px;
+      min-width: 190px;
     }
     .chart-box h3 {
-      margin: 0 0 8px;
-      font-size: 1.1rem;
+      margin: 0 0 10px;
+      font-size: 1.2rem;
       color: #c8e000;
       font-weight: 700;
     }
     .chart-box.sew-chart h3 { color: #ff9999; }
     .chart-box.assy-chart h3 { color: #7dc8e8; }
     .chart-box.total-chart h3 { color: #c8e000; }
+    .chart-box.olk-chart h3 { color: #c8e000; }
     .pie-container {
       position: relative;
-      width: 120px;
-      height: 120px;
+      width: 130px;
+      height: 130px;
       margin: 0 auto;
     }
     .pie-svg {
-      transform: rotate(-90deg);
+      background-color: #02252b;
+      border-radius: 50%;
+      transform: rotate(-90deg) scale(1.25);
+      transform-origin: 50% 50%;
     }
     .pie-center {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 1.1rem;
+      font-size: 1.3rem;
       font-weight: 700;
       color: #fff;
     }
@@ -162,6 +170,17 @@
     }
     .legend-dot.sched { background: #3498db; }
     .legend-dot.prod { background: #2ecc71; }
+
+    /* Group pies on page 3 (many small donuts, wrap in rows) */
+    .group-charts {
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 12px;
+      row-gap: 18px;
+    }
+    .group-charts .chart-box {
+      min-width: 170px;
+    }
   </style>
 </head>
 <body>
@@ -180,114 +199,215 @@
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table id="pvsTable">
-          <thead id="thead"></thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <!-- Page 1: SEW -->
+      <div class="page page-sew active">
+        <div class="table-wrap">
+          <table id="pvsTableSew">
+            <thead id="theadSew"></thead>
+            <tbody id="tbodySew"></tbody>
+          </table>
+        </div>
+
+        <div class="charts-row" id="chartsRowSew">
+          <div class="chart-box sew-chart">
+            <h3>SEW MTD</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSewMtd"></svg>
+              <div class="pie-center" id="pieSewMtdPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="sewMtdSched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="sewMtdProd">-</span></span>
+            </div>
+          </div>
+          <div class="chart-box sew-chart">
+            <h3>SEW WTD</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSewWtd"></svg>
+              <div class="pie-center" id="pieSewWtdPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="sewWtdSched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="sewWtdProd">-</span></span>
+            </div>
+          </div>
+          <div class="chart-box sew-chart">
+            <h3>SEW Daily</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSewDaily"></svg>
+              <div class="pie-center" id="pieSewDailyPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="sewDailySched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="sewDailyProd">-</span></span>
+            </div>
+          </div>
+          <div class="chart-box olk-chart">
+            <h3>SEW MTD OLK</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSewOlk"></svg>
+              <div class="pie-center" id="pieSewOlkPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> OLK: <span id="sewOlkQty">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="sewOlkProd">-</span></span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- MTD Pie Charts -->
-      <div class="charts-row" id="chartsRow">
-        <div class="chart-box sew-chart">
-          <h3>SEW MTD</h3>
-          <div class="pie-container">
-            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieSew"></svg>
-            <div class="pie-center" id="pieSewPct">-</div>
+      <!-- Page 2: ASSY -->
+      <div class="page page-assy">
+        <div class="table-wrap">
+          <table id="pvsTableAssy">
+            <thead id="theadAssy"></thead>
+            <tbody id="tbodyAssy"></tbody>
+          </table>
+        </div>
+
+        <div class="charts-row" id="chartsRowAssy">
+          <div class="chart-box assy-chart">
+            <h3>ASSY MTD</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssyMtd"></svg>
+              <div class="pie-center" id="pieAssyMtdPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="assyMtdSched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="assyMtdProd">-</span></span>
+            </div>
           </div>
-          <div class="chart-legend">
-            <span><span class="legend-dot sched"></span> Sched: <span id="sewSched">-</span></span>
-            <span><span class="legend-dot prod"></span> Prod: <span id="sewProd">-</span></span>
+          <div class="chart-box assy-chart">
+            <h3>ASSY WTD</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssyWtd"></svg>
+              <div class="pie-center" id="pieAssyWtdPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="assyWtdSched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="assyWtdProd">-</span></span>
+            </div>
+          </div>
+          <div class="chart-box assy-chart">
+            <h3>ASSY Daily</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssyDaily"></svg>
+              <div class="pie-center" id="pieAssyDailyPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> Sched: <span id="assyDailySched">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="assyDailyProd">-</span></span>
+            </div>
+          </div>
+          <div class="chart-box olk-chart">
+            <h3>ASSY MTD OLK</h3>
+            <div class="pie-container">
+              <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssyOlk"></svg>
+              <div class="pie-center" id="pieAssyOlkPct">-</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot sched"></span> OLK: <span id="assyOlkQty">-</span></span>
+              <span><span class="legend-dot prod"></span> Prod: <span id="assyOlkProd">-</span></span>
+            </div>
           </div>
         </div>
-        <div class="chart-box assy-chart">
-          <h3>ASSY MTD</h3>
-          <div class="pie-container">
-            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieAssy"></svg>
-            <div class="pie-center" id="pieAssyPct">-</div>
-          </div>
-          <div class="chart-legend">
-            <span><span class="legend-dot sched"></span> Sched: <span id="assySched">-</span></span>
-            <span><span class="legend-dot prod"></span> Prod: <span id="assyProd">-</span></span>
-          </div>
+      </div>
+
+      <!-- Page 3: Grouped Totals -->
+      <div class="page page-groups">
+        <div class="table-wrap">
+          <table id="pvsTableGroups">
+            <thead id="theadGroups"></thead>
+            <tbody id="tbodyGroups"></tbody>
+          </table>
         </div>
-        <div class="chart-box total-chart">
-          <h3>TOTAL MTD</h3>
-          <div class="pie-container">
-            <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="pieTotal"></svg>
-            <div class="pie-center" id="pieTotalPct">-</div>
-          </div>
-          <div class="chart-legend">
-            <span><span class="legend-dot sched"></span> Sched: <span id="totalSched">-</span></span>
-            <span><span class="legend-dot prod"></span> Prod: <span id="totalProd">-</span></span>
-          </div>
-        </div>
+        <div class="charts-row group-charts" id="groupChartsContainer"></div>
       </div>
     </div>
   </div>
 
 <script>
 // This placeholder will be replaced by generate_static_pvs.py
-const SNAPSHOT = {"success": true, "date": "2025-12-10", "rows": [{"code": "B_FG", "line": "BR223 - SEW", "category": "SEW", "mtd": {"schedule": 4086, "production": 4118.0, "delta": 32.0, "adherence_pct": 0.8}, "wtd": {"schedule": 1536, "production": 1496.0, "delta": -40.0, "adherence_pct": -2.6}, "daily": {"schedule": 512, "production": 648.0, "delta": 136.0, "adherence_pct": 26.6}}, {"code": "Z_FG", "line": "CDPO - SEW", "category": "SEW", "mtd": {"schedule": 8994, "production": 9304.0, "delta": 310.0, "adherence_pct": 3.4}, "wtd": {"schedule": 3069, "production": 3030.0, "delta": -39.0, "adherence_pct": -1.3}, "daily": {"schedule": 1023, "production": 1108.0, "delta": 85.0, "adherence_pct": 8.3}}, {"code": "F_FG", "line": "FIAT - SEW", "category": "SEW", "mtd": {"schedule": 15557, "production": 15459.0, "delta": -98.0, "adherence_pct": -0.6}, "wtd": {"schedule": 5832, "production": 5892.0, "delta": 60.0, "adherence_pct": 1.0}, "daily": {"schedule": 1944, "production": 1980.0, "delta": 36.0, "adherence_pct": 1.9}}, {"code": "J_FG", "line": "JLR - SEW", "category": "SEW", "mtd": {"schedule": 1294, "production": 1662.0, "delta": 368.0, "adherence_pct": 28.4}, "wtd": {"schedule": 504, "production": 804.0, "delta": 300.0, "adherence_pct": 59.5}, "daily": {"schedule": 168, "production": 308.0, "delta": 140.0, "adherence_pct": 83.3}}, {"code": "Q_FG", "line": "KIA - SEW", "category": "SEW", "mtd": {"schedule": 393, "production": 350.0, "delta": -43.0, "adherence_pct": -10.9}, "wtd": {"schedule": 393, "production": 350.0, "delta": -43.0, "adherence_pct": -10.9}, "daily": {"schedule": 131, "production": 160.0, "delta": 29.0, "adherence_pct": 22.1}}, {"code": "N_FG", "line": "MMA - SEW", "category": "SEW", "mtd": {"schedule": 32357, "production": 28086.0, "delta": -4271.0, "adherence_pct": -13.2}, "wtd": {"schedule": 13062, "production": 10773.0, "delta": -2289.0, "adherence_pct": -17.5}, "daily": {"schedule": 4354, "production": 3535.0, "delta": -819.0, "adherence_pct": -18.8}}, {"code": "S_FG", "line": "OV5X - SEW", "category": "SEW", "mtd": {"schedule": 2566, "production": 3234.0, "delta": 668.0, "adherence_pct": 26.0}, "wtd": {"schedule": 996, "production": 1130.0, "delta": 134.0, "adherence_pct": 13.5}, "daily": {"schedule": 332, "production": 350.0, "delta": 18.0, "adherence_pct": 5.4}}, {"code": "P_FG", "line": "PO426 - SEW", "category": "SEW", "mtd": {"schedule": 3356, "production": 3424.0, "delta": 68.0, "adherence_pct": 2.0}, "wtd": {"schedule": 1086, "production": 1312.0, "delta": 226.0, "adherence_pct": 20.8}, "daily": {"schedule": 362, "production": 376.0, "delta": 14.0, "adherence_pct": 3.9}}, {"code": "A_FG", "line": "VOLVO- SEW", "category": "SEW", "mtd": {"schedule": 14982, "production": 11680.0, "delta": -3302.0, "adherence_pct": -22.0}, "wtd": {"schedule": 6822, "production": 3935.0, "delta": -2887.0, "adherence_pct": -42.3}, "daily": {"schedule": 2274, "production": 1305.0, "delta": -969.0, "adherence_pct": -42.6}}, {"code": "C_FG", "line": "CDPO - ASSY", "category": "ASSY", "mtd": {"schedule": 8834, "production": 8484.0, "delta": -350.0, "adherence_pct": -4.0}, "wtd": {"schedule": 3519, "production": 3042.0, "delta": -477.0, "adherence_pct": -13.6}, "daily": {"schedule": 1173, "production": 888.0, "delta": -285.0, "adherence_pct": -24.3}}, {"code": "L_FG", "line": "JLR - ASSY", "category": "ASSY", "mtd": {"schedule": 1624, "production": 2240.0, "delta": 616.0, "adherence_pct": 37.9}, "wtd": {"schedule": 609, "production": 768.0, "delta": 159.0, "adherence_pct": 26.1}, "daily": {"schedule": 203, "production": 320.0, "delta": 117.0, "adherence_pct": 57.6}}, {"code": "K_FG", "line": "KIA - ASSY", "category": "ASSY", "mtd": {"schedule": 309, "production": 1266.0, "delta": 957.0, "adherence_pct": 300.0}, "wtd": {"schedule": 309, "production": 756.0, "delta": 447.0, "adherence_pct": 144.7}, "daily": {"schedule": 103, "production": 288.0, "delta": 185.0, "adherence_pct": 179.6}}, {"code": "M_FG", "line": "MMA - ASSY", "category": "ASSY", "mtd": {"schedule": 31437, "production": 35367.0, "delta": 3930.0, "adherence_pct": 12.5}, "wtd": {"schedule": 12162, "production": 14107.0, "delta": 1945.0, "adherence_pct": 16.0}, "daily": {"schedule": 4054, "production": 4365.0, "delta": 311.0, "adherence_pct": 7.7}}, {"code": "O_FG", "line": "OV5X - ASSY", "category": "ASSY", "mtd": {"schedule": 3051, "production": 3252.0, "delta": 201.0, "adherence_pct": 6.6}, "wtd": {"schedule": 1011, "production": 1032.0, "delta": 21.0, "adherence_pct": 2.1}, "daily": {"schedule": 337, "production": 240.0, "delta": -97.0, "adherence_pct": -28.8}}, {"code": "V_FG", "line": "VOLVO- ASSY", "category": "ASSY", "mtd": {"schedule": 28121, "production": 34843.0, "delta": 6722.0, "adherence_pct": 23.9}, "wtd": {"schedule": 11076, "production": 11785.0, "delta": 709.0, "adherence_pct": 6.4}, "daily": {"schedule": 3692, "production": 3982.0, "delta": 290.0, "adherence_pct": 7.9}}, {"code": "H_FG", "line": "BJA", "category": "OTHER", "mtd": {"schedule": 0, "production": 2020.0, "delta": 2020.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 2020.0, "delta": 2020.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 300.0, "delta": 300.0, "adherence_pct": 0.0}}, {"code": "U_FG", "line": "MAN", "category": "OTHER", "mtd": {"schedule": 4640, "production": 9883.0, "delta": 5243.0, "adherence_pct": 113.0}, "wtd": {"schedule": 1740, "production": 3487.0, "delta": 1747.0, "adherence_pct": 100.4}, "daily": {"schedule": 580, "production": 1114.0, "delta": 534.0, "adherence_pct": 92.1}}, {"code": "T_FG", "line": "P13A", "category": "OTHER", "mtd": {"schedule": 0, "production": 24.0, "delta": 24.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "G_FG", "line": "PZ1D", "category": "OTHER", "mtd": {"schedule": 298, "production": 3410.0, "delta": 3112.0, "adherence_pct": 300.0}, "wtd": {"schedule": 183, "production": 1510.0, "delta": 1327.0, "adherence_pct": 300.0}, "daily": {"schedule": 61, "production": 390.0, "delta": 329.0, "adherence_pct": 300.0}}, {"code": "0000", "line": "Pre-production", "category": "OTHER", "mtd": {"schedule": 0, "production": 23.0, "delta": 23.0, "adherence_pct": 0.0}, "wtd": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}, "daily": {"schedule": 0, "production": 0.0, "delta": 0.0, "adherence_pct": 0.0}}, {"code": "R_FG", "line": "Renault", "category": "OTHER", "mtd": {"schedule": 2504, "production": 5095.0, "delta": 2591.0, "adherence_pct": 103.5}, "wtd": {"schedule": 939, "production": 1900.0, "delta": 961.0, "adherence_pct": 102.3}, "daily": {"schedule": 313, "production": 610.0, "delta": 297.0, "adherence_pct": 94.9}}, {"code": "E_FG", "line": "SCANIA", "category": "OTHER", "mtd": {"schedule": 1995, "production": 3560.0, "delta": 1565.0, "adherence_pct": 78.4}, "wtd": {"schedule": 690, "production": 1233.0, "delta": 543.0, "adherence_pct": 78.7}, "daily": {"schedule": 230, "production": 391.0, "delta": 161.0, "adherence_pct": 70.0}}], "generated_at": "2025-12-11 09:46"};
+const SNAPSHOT = {"success": true, "date": "2026-02-03", "rows": [{"code": "BR223", "line": "BR223", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 956, "production": 1103.0, "delta": 147.0, "adherence_pct": 15.4}, "wtd": {"schedule": 956, "production": 1103.0, "delta": 147.0, "adherence_pct": 15.4}, "daily": {"schedule": 478, "production": 465.0, "delta": -13.0, "adherence_pct": -2.7}}, {"code": "FIAT", "line": "FIAT", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 2601, "production": 1639.0, "delta": -962.0, "adherence_pct": -37.0}, "wtd": {"schedule": 2601, "production": 1639.0, "delta": -962.0, "adherence_pct": -37.0}, "daily": {"schedule": 1300, "production": 709.0, "delta": -591.0, "adherence_pct": -45.5}}, {"code": "PO426", "line": "PO426", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 1603, "production": 450.0, "delta": -1153.0, "adherence_pct": -71.9}, "wtd": {"schedule": 1603, "production": 450.0, "delta": -1153.0, "adherence_pct": -71.9}, "daily": {"schedule": 801, "production": 258.0, "delta": -543.0, "adherence_pct": -67.8}}, {"code": "P13A", "line": "P13A", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 489, "production": 0.0, "delta": -489.0, "adherence_pct": -100.0}, "wtd": {"schedule": 489, "production": 0.0, "delta": -489.0, "adherence_pct": -100.0}, "daily": {"schedule": 244, "production": 0.0, "delta": -244.0, "adherence_pct": -100.0}}, {"code": "CDPO - SEW", "line": "CDPO - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 2116, "production": 600.0, "delta": -1516.0, "adherence_pct": -71.6}, "wtd": {"schedule": 2116, "production": 600.0, "delta": -1516.0, "adherence_pct": -71.6}, "daily": {"schedule": 1058, "production": 600.0, "delta": -458.0, "adherence_pct": -43.3}}, {"code": "PZ1D", "line": "PZ1D", "category": "SEW", "mtd": {"olk": 5325, "adh_olk_pct": 0.6, "schedule": 0, "production": 30.0, "delta": 30.0, "adherence_pct": null}, "wtd": {"schedule": 0, "production": 30.0, "delta": 30.0, "adherence_pct": null}, "daily": {"schedule": 0, "production": 30.0, "delta": 30.0, "adherence_pct": null}}, {"code": "MAN", "line": "MAN", "category": "SEW", "mtd": {"olk": 8034, "adh_olk_pct": 9.2, "schedule": 0, "production": 739.0, "delta": 739.0, "adherence_pct": null}, "wtd": {"schedule": 0, "production": 739.0, "delta": 739.0, "adherence_pct": null}, "daily": {"schedule": 0, "production": 739.0, "delta": 739.0, "adherence_pct": null}}, {"code": "SCANIA", "line": "SCANIA", "category": "SEW", "mtd": {"olk": 6784, "adh_olk_pct": 6.2, "schedule": 470, "production": 420.0, "delta": -50.0, "adherence_pct": -10.6}, "wtd": {"schedule": 470, "production": 420.0, "delta": -50.0, "adherence_pct": -10.6}, "daily": {"schedule": 235, "production": 420.0, "delta": 185.0, "adherence_pct": 78.7}}, {"code": "RENAULT", "line": "RENAULT", "category": "SEW", "mtd": {"olk": 8965, "adh_olk_pct": 7.4, "schedule": 600, "production": 660.0, "delta": 60.0, "adherence_pct": 10.0}, "wtd": {"schedule": 600, "production": 660.0, "delta": 60.0, "adherence_pct": 10.0}, "daily": {"schedule": 300, "production": 660.0, "delta": 360.0, "adherence_pct": 120.0}}, {"code": "BJA", "line": "BJA", "category": "SEW", "mtd": {"olk": 3600, "adh_olk_pct": 11.1, "schedule": 2237, "production": 400.0, "delta": -1837.0, "adherence_pct": -82.1}, "wtd": {"schedule": 2237, "production": 400.0, "delta": -1837.0, "adherence_pct": -82.1}, "daily": {"schedule": 1118, "production": 400.0, "delta": -718.0, "adherence_pct": -64.2}}, {"code": "KIA - SEW", "line": "KIA - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 206, "production": 160.0, "delta": -46.0, "adherence_pct": -22.3}, "wtd": {"schedule": 206, "production": 160.0, "delta": -46.0, "adherence_pct": -22.3}, "daily": {"schedule": 103, "production": 160.0, "delta": 57.0, "adherence_pct": 55.3}}, {"code": "JLR - SEW", "line": "JLR - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 163, "production": 44.0, "delta": -119.0, "adherence_pct": -73.0}, "wtd": {"schedule": 163, "production": 44.0, "delta": -119.0, "adherence_pct": -73.0}, "daily": {"schedule": 81, "production": 44.0, "delta": -37.0, "adherence_pct": -45.7}}, {"code": "MMA - SEW", "line": "MMA - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 10038, "production": 3158.0, "delta": -6880.0, "adherence_pct": -68.5}, "wtd": {"schedule": 10038, "production": 3158.0, "delta": -6880.0, "adherence_pct": -68.5}, "daily": {"schedule": 5019, "production": 3158.0, "delta": -1861.0, "adherence_pct": -37.1}}, {"code": "Opel - SEW", "line": "Opel - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 666, "production": 278.0, "delta": -388.0, "adherence_pct": -58.3}, "wtd": {"schedule": 666, "production": 278.0, "delta": -388.0, "adherence_pct": -58.3}, "daily": {"schedule": 333, "production": 278.0, "delta": -55.0, "adherence_pct": -16.5}}, {"code": "Volvo - SEW", "line": "Volvo - SEW", "category": "SEW", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 2266, "production": 1240.0, "delta": -1026.0, "adherence_pct": -45.3}, "wtd": {"schedule": 2266, "production": 1240.0, "delta": -1026.0, "adherence_pct": -45.3}, "daily": {"schedule": 1133, "production": 1240.0, "delta": 107.0, "adherence_pct": 9.4}}, {"code": "Volvo - ASSY", "line": "Volvo - ASSY", "category": "ASSY", "mtd": {"olk": 63453, "adh_olk_pct": 4.8, "schedule": 7618, "production": 3060.0, "delta": -4558.0, "adherence_pct": -59.8}, "wtd": {"schedule": 7618, "production": 3060.0, "delta": -4558.0, "adherence_pct": -59.8}, "daily": {"schedule": 3809, "production": 2667.0, "delta": -1142.0, "adherence_pct": -30.0}}, {"code": "KIA - ASSY", "line": "KIA - ASSY", "category": "ASSY", "mtd": {"olk": 2136, "adh_olk_pct": 3.7, "schedule": 324, "production": 78.0, "delta": -246.0, "adherence_pct": -75.9}, "wtd": {"schedule": 324, "production": 78.0, "delta": -246.0, "adherence_pct": -75.9}, "daily": {"schedule": 162, "production": 78.0, "delta": -84.0, "adherence_pct": -51.9}}, {"code": "CDPO - ASSY", "line": "CDPO - ASSY", "category": "ASSY", "mtd": {"olk": 14688, "adh_olk_pct": 7.7, "schedule": 2018, "production": 1128.0, "delta": -890.0, "adherence_pct": -44.1}, "wtd": {"schedule": 2018, "production": 1128.0, "delta": -890.0, "adherence_pct": -44.1}, "daily": {"schedule": 1009, "production": 828.0, "delta": -181.0, "adherence_pct": -17.9}}, {"code": "JLR - ASSY", "line": "JLR - ASSY", "category": "ASSY", "mtd": {"olk": 3904, "adh_olk_pct": 0.0, "schedule": 198, "production": 0.0, "delta": -198.0, "adherence_pct": -100.0}, "wtd": {"schedule": 198, "production": 0.0, "delta": -198.0, "adherence_pct": -100.0}, "daily": {"schedule": 99, "production": 0.0, "delta": -99.0, "adherence_pct": -100.0}}, {"code": "MMA - ASSY", "line": "MMA - ASSY", "category": "ASSY", "mtd": {"olk": 47449, "adh_olk_pct": 7.7, "schedule": 14296, "production": 3662.0, "delta": -10634.0, "adherence_pct": -74.4}, "wtd": {"schedule": 14296, "production": 3662.0, "delta": -10634.0, "adherence_pct": -74.4}, "daily": {"schedule": 7148, "production": 2654.0, "delta": -4494.0, "adherence_pct": -62.9}}, {"code": "Opel - ASSY", "line": "Opel - ASSY", "category": "ASSY", "mtd": {"olk": 0, "adh_olk_pct": 0.0, "schedule": 696, "production": 168.0, "delta": -528.0, "adherence_pct": -75.9}, "wtd": {"schedule": 696, "production": 168.0, "delta": -528.0, "adherence_pct": -75.9}, "daily": {"schedule": 348, "production": 168.0, "delta": -180.0, "adherence_pct": -51.7}}], "generated_at": "2026-02-04 11:23", "totals": {"sew": {"mtd": {"schedule": 24411, "production": 10921.0}, "wtd": {"schedule": 24411, "production": 10921.0}, "daily": {"schedule": 12203, "production": 9161.0}}, "assy": {"mtd": {"schedule": 25150, "production": 8096.0}, "wtd": {"schedule": 25150, "production": 8096.0}, "daily": {"schedule": 12575, "production": 6395.0}}, "other": {"mtd": {"schedule": 0, "production": 0}, "wtd": {"schedule": 0, "production": 0}, "daily": {"schedule": 0, "production": 0}}, "all": {"mtd": {"schedule": 49561, "production": 19017.0}, "wtd": {"schedule": 49561, "production": 19017.0}, "daily": {"schedule": 24778, "production": 15556.0}}}, "group_totals": [{"group": "BJA", "mtd": {"schedule": 2237, "production": 400.0, "delta": -1837.0, "adherence_pct": -82.1, "olk": 3600, "adh_olk_pct": 11.1}, "wtd": {"schedule": 2237, "production": 400.0, "delta": -1837.0, "adherence_pct": -82.1}, "daily": {"schedule": 1118, "production": 400.0, "delta": -718.0, "adherence_pct": -64.2}}, {"group": "CDPO", "mtd": {"schedule": 4134, "production": 1758.0, "delta": -2376.0, "adherence_pct": -57.5, "olk": 14688, "adh_olk_pct": 12.0}, "wtd": {"schedule": 4134, "production": 1758.0, "delta": -2376.0, "adherence_pct": -57.5}, "daily": {"schedule": 2067, "production": 1458.0, "delta": -609.0, "adherence_pct": -29.5}}, {"group": "CV", "mtd": {"schedule": 1070, "production": 1819.0, "delta": 749.0, "adherence_pct": 70.0, "olk": 0, "adh_olk_pct": 0.0}, "wtd": {"schedule": 1070, "production": 1819.0, "delta": 749.0, "adherence_pct": 70.0}, "daily": {"schedule": 535, "production": 1819.0, "delta": 1284.0, "adherence_pct": 240.0}}, {"group": "JLR", "mtd": {"schedule": 361, "production": 44.0, "delta": -317.0, "adherence_pct": -87.8, "olk": 3904, "adh_olk_pct": 1.1}, "wtd": {"schedule": 361, "production": 44.0, "delta": -317.0, "adherence_pct": -87.8}, "daily": {"schedule": 180, "production": 44.0, "delta": -136.0, "adherence_pct": -75.6}}, {"group": "KIA", "mtd": {"schedule": 530, "production": 238.0, "delta": -292.0, "adherence_pct": -55.1, "olk": 2136, "adh_olk_pct": 11.1}, "wtd": {"schedule": 530, "production": 238.0, "delta": -292.0, "adherence_pct": -55.1}, "daily": {"schedule": 265, "production": 238.0, "delta": -27.0, "adherence_pct": -10.2}}, {"group": "LUCENEC", "mtd": {"schedule": 5158, "production": 3192.0, "delta": -1966.0, "adherence_pct": -38.1, "olk": 0, "adh_olk_pct": 0.0}, "wtd": {"schedule": 5158, "production": 3192.0, "delta": -1966.0, "adherence_pct": -38.1}, "daily": {"schedule": 2579, "production": 1432.0, "delta": -1147.0, "adherence_pct": -44.5}}, {"group": "MMA", "mtd": {"schedule": 24334, "production": 6820.0, "delta": -17514.0, "adherence_pct": -72.0, "olk": 47449, "adh_olk_pct": 14.4}, "wtd": {"schedule": 24334, "production": 6820.0, "delta": -17514.0, "adherence_pct": -72.0}, "daily": {"schedule": 12167, "production": 5812.0, "delta": -6355.0, "adherence_pct": -52.2}}, {"group": "NISSAN", "mtd": {"schedule": 489, "production": 0.0, "delta": -489.0, "adherence_pct": -100.0, "olk": 0, "adh_olk_pct": 0.0}, "wtd": {"schedule": 489, "production": 0.0, "delta": -489.0, "adherence_pct": -100.0}, "daily": {"schedule": 244, "production": 0.0, "delta": -244.0, "adherence_pct": -100.0}}, {"group": "OPEL", "mtd": {"schedule": 1361, "production": 446.0, "delta": -915.0, "adherence_pct": -67.2, "olk": 0, "adh_olk_pct": 0.0}, "wtd": {"schedule": 1361, "production": 446.0, "delta": -915.0, "adherence_pct": -67.2}, "daily": {"schedule": 680, "production": 446.0, "delta": -234.0, "adherence_pct": -34.4}}, {"group": "VOLVO", "mtd": {"schedule": 9883, "production": 4300.0, "delta": -5583.0, "adherence_pct": -56.5, "olk": 63453, "adh_olk_pct": 6.8}, "wtd": {"schedule": 9883, "production": 4300.0, "delta": -5583.0, "adherence_pct": -56.5}, "daily": {"schedule": 4941, "production": 3907.0, "delta": -1034.0, "adherence_pct": -20.9}}], "olk_totals": {"sew": {"olk": 32708, "production": 2249.0, "adh_olk_pct": 6.9}, "assy": {"olk": 131630, "production": 7928.0, "adh_olk_pct": 6.0}}};
 
 const fmtInt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n||0);
-const fmtPct = n => `${(n??0).toFixed(0)}%`;
+const fmtPct = n => {
+  if (n === null || n === undefined || !Number.isFinite(n)) return 'N/A';
+  return `${Number(n).toFixed(0)}%`;
+};
+
+function getOlkAdherenceColor(pct) {
+  const green = { r: 46, g: 204, b: 113 };
+  const yellow = { r: 241, g: 196, b: 15 };
+  const red = { r: 231, g: 76, b: 60 };
+
+  let val = Number(pct);
+  if (!isFinite(val)) val = 0;
+
+  const diff = Math.abs(val - 100);
+  if (diff <= 3) return { ...green };
+  if (diff <= 5) return { ...yellow };
+  return { ...red };
+}
+
+function getOlkAdherenceStyle(pct) {
+  const val = Number(pct);
+  const diff = isFinite(val) ? Math.abs(val - 100) : 999;
+  const c = getOlkAdherenceColor(val || 0);
+  const bg = `rgb(${c.r}, ${c.g}, ${c.b})`;
+  const text = (diff > 3 && diff <= 5) ? '#000' : '#fff';
+  return `background-color: ${bg}; color: ${text};`;
+}
 
 function getAdherenceStyle(pct) {
-  const deviation = Math.abs(pct);
-  const maxDeviation = 50;
-  const intensity = Math.min(deviation / maxDeviation, 1);
-  if (pct >= 0) {
-    const r = Math.round(20 + (40 - 20) * intensity);
-    const g = Math.round(30 + (167 - 30) * intensity);
-    const b = Math.round(25 + (69 - 25) * intensity);
-    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#d4ffd4' : '#aaa'};`;
-  } else {
-    const r = Math.round(30 + (220 - 30) * intensity);
-    const g = Math.round(20 + (53 - 20) * intensity);
-    const b = Math.round(20 + (69 - 20) * intensity);
-    return `background-color: rgb(${r}, ${g}, ${b}); color: ${intensity > 0.3 ? '#fff' : '#aaa'};`;
+  if (pct === null || pct === undefined || !Number.isFinite(pct)) {
+    return 'background-color: rgba(255,255,255,0.08); color: #dddddd;';
   }
+  const absPct = 100 + Number(pct);
+  const diff = Math.abs(absPct - 100);
+  const green = { r: 46, g: 204, b: 113 };
+  const yellow = { r: 241, g: 196, b: 15 };
+  const red = { r: 231, g: 76, b: 60 };
+
+  let c = red;
+  let text = '#fff';
+  if (diff <= 3) {
+    c = green;
+  } else if (diff < 5) {
+    c = yellow;
+    text = '#000';
+  }
+  const bg = `rgb(${c.r}, ${c.g}, ${c.b})`;
+  return `background-color: ${bg}; color: ${text};`;
 }
 
 function deltaClass(d){ return d >= 0 ? 'delta-pos' : 'delta-neg'; }
 
-function buildHeader() {
-  const thead = document.getElementById('thead');
+function buildHeader(theadId, firstLabel) {
+  const thead = document.getElementById(theadId);
+  if (!thead) return;
+  const label = firstLabel || 'Line';
   thead.innerHTML = `
     <tr>
-      <th rowspan="2">Line</th>
-      <th class="group" colspan="4">MTD</th>
+      <th rowspan="2">${label}</th>
+      <th class="group" colspan="5">MTD</th>
       <th class="group" colspan="4">WTD</th>
       <th class="group" colspan="4">Daily PVS</th>
     </tr>
     <tr>
-      <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
+      <th>OLK</th><th>Sch</th><th>Prod</th><th>Delta</th><th>Adh %</th>
       <th>Schedule</th><th>Production</th><th>Delta</th><th>Adh %</th>
       <th>Sched</th><th>Prod</th><th>Delta</th><th>Adh %</th>
     </tr>`;
 }
 
-function renderRows(rows){
-  const tb = document.getElementById('tbody');
+function renderRowsInto(rows, tbodyId){
+  const tb = document.getElementById(tbodyId);
   tb.innerHTML = '';
-
-  let lastCategory = null;
 
   for (let i = 0; i < rows.length; i++){
     const r = rows[i];
     const cat = r.category || 'OTHER';
-
-    // Insert separator row when category changes
-    if (lastCategory && cat !== lastCategory) {
-      const sepTr = document.createElement('tr');
-      sepTr.classList.add('cat-separator');
-      for (let j = 0; j < 13; j++) {
-        sepTr.appendChild(document.createElement('td'));
-      }
-      tb.appendChild(sepTr);
-    }
-    lastCategory = cat;
 
     const tr = document.createElement('tr');
     // Apply category class for coloring
@@ -303,8 +423,8 @@ function renderRows(rows){
 
     tr.appendChild(c(r.line));
 
-    // MTD (only Adh % cell gets gradient background)
     const mtdStyle = getAdherenceStyle(r.mtd.adherence_pct);
+    tr.appendChild(c(fmtInt(r.mtd.olk || 0), 'num'));
     tr.appendChild(c(fmtInt(r.mtd.schedule), 'num'));
     tr.appendChild(c(fmtInt(r.mtd.production), 'num'));
     tr.appendChild(c(fmtInt(r.mtd.delta), `num ${deltaClass(r.mtd.delta)}`));
@@ -328,6 +448,86 @@ function renderRows(rows){
   }
 }
 
+function renderRows(rows){
+  const sewRows = rows.filter(r => r.category === 'SEW');
+  const assyRows = rows.filter(r => r.category === 'ASSY');
+
+  renderRowsInto(sewRows, 'tbodySew');
+  renderRowsInto(assyRows, 'tbodyAssy');
+}
+
+function renderGroupRows(groups){
+  const tb = document.getElementById('tbodyGroups');
+  if (!tb) return;
+  tb.innerHTML = '';
+
+  for (let i = 0; i < groups.length; i++){
+    const g = groups[i];
+
+    const tr = document.createElement('tr');
+    const c = (html, cls='', style='') => {
+      const td = document.createElement('td');
+      if(cls) td.className = cls;
+      if(style) td.style.cssText = style;
+      td.innerHTML = html;
+      return td;
+    };
+
+    tr.appendChild(c(g.group || ''));
+
+    const mtd = g.mtd || {};
+    const wtd = g.wtd || {};
+    const daily = g.daily || {};
+
+    const mtdStyle = getAdherenceStyle(mtd.adherence_pct);
+    tr.appendChild(c(fmtInt(mtd.olk || 0), 'num'));
+    tr.appendChild(c(fmtInt(mtd.schedule || 0), 'num'));
+    tr.appendChild(c(fmtInt(mtd.production || 0), 'num'));
+    tr.appendChild(c(fmtInt(mtd.delta || 0), `num ${deltaClass(mtd.delta || 0)}`));
+    tr.appendChild(c(fmtPct(mtd.adherence_pct), 'num', mtdStyle));
+
+    const wtdStyle = getAdherenceStyle(wtd.adherence_pct);
+    tr.appendChild(c(fmtInt(wtd.schedule || 0), 'num'));
+    tr.appendChild(c(fmtInt(wtd.production || 0), 'num'));
+    tr.appendChild(c(fmtInt(wtd.delta || 0), `num ${deltaClass(wtd.delta || 0)}`));
+    tr.appendChild(c(fmtPct(wtd.adherence_pct), 'num', wtdStyle));
+
+    const dailyStyle = getAdherenceStyle(daily.adherence_pct);
+    tr.appendChild(c(fmtInt(daily.schedule || 0), 'num'));
+    tr.appendChild(c(fmtInt(daily.production || 0), 'num'));
+    tr.appendChild(c(fmtInt(daily.delta || 0), `num ${deltaClass(daily.delta || 0)}`));
+    tr.appendChild(c(fmtPct(daily.adherence_pct), 'num', dailyStyle));
+
+    tb.appendChild(tr);
+  }
+}
+
+function addGaugeNeedle(svg, cx, cy, r, absPct) {
+  if (absPct === null || absPct === undefined || !isFinite(absPct)) return;
+
+  const clamped = Math.max(0, Math.min(Number(absPct), 200));
+  const angle = (-150 + (clamped / 200) * 300) * Math.PI / 180;
+  const needleLen = r - 6;
+  const x = cx + needleLen * Math.cos(angle);
+  const y = cy + needleLen * Math.sin(angle);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', cx);
+  line.setAttribute('y1', cy);
+  line.setAttribute('x2', x);
+  line.setAttribute('y2', y);
+  line.setAttribute('stroke', '#ffffff');
+  line.setAttribute('stroke-width', 2);
+  svg.appendChild(line);
+
+  const hub = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  hub.setAttribute('cx', cx);
+  hub.setAttribute('cy', cy);
+  hub.setAttribute('r', 3);
+  hub.setAttribute('fill', '#ffffff');
+  svg.appendChild(hub);
+}
+
 // Draw a donut/pie chart showing production vs schedule
 function drawPieChart(svgId, centerId, sched, prod) {
   const svg = document.getElementById(svgId);
@@ -344,58 +544,191 @@ function drawPieChart(svgId, centerId, sched, prod) {
   bgCircle.setAttribute('cy', cy);
   bgCircle.setAttribute('r', r);
   bgCircle.setAttribute('fill', 'none');
-  bgCircle.setAttribute('stroke', '#3498db');
+  bgCircle.setAttribute('stroke', '#02252b');
   bgCircle.setAttribute('stroke-width', strokeWidth);
   svg.appendChild(bgCircle);
 
-  // Production arc
-  const pct = sched > 0 ? Math.min(prod / sched, 1.5) : 0; // cap at 150%
+  const hasSched = sched > 0;
+  const ratio = hasSched ? Math.min(prod / sched, 1.5) : 0;
+  const absPct = hasSched ? (prod / sched) * 100 : null;
+  const c = getOlkAdherenceColor((absPct || 0));
+
   const prodArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   prodArc.setAttribute('cx', cx);
   prodArc.setAttribute('cy', cy);
   prodArc.setAttribute('r', r);
   prodArc.setAttribute('fill', 'none');
-  prodArc.setAttribute('stroke', pct >= 1 ? '#2ecc71' : '#e74c3c');
+  prodArc.setAttribute('stroke', `rgb(${c.r}, ${c.g}, ${c.b})`);
   prodArc.setAttribute('stroke-width', strokeWidth);
-  prodArc.setAttribute('stroke-dasharray', `${circumference * Math.min(pct, 1)} ${circumference}`);
+  prodArc.setAttribute('stroke-dasharray', `${circumference * Math.min(ratio, 1)} ${circumference}`);
   prodArc.setAttribute('stroke-linecap', 'round');
   svg.appendChild(prodArc);
 
-  // Center percentage text
-  const displayPct = sched > 0 ? Math.round((prod / sched) * 100) : 0;
-  centerEl.textContent = displayPct + '%';
-  centerEl.style.color = displayPct >= 100 ? '#2ecc71' : '#e74c3c';
+  if (absPct === null) {
+    centerEl.textContent = 'N/A';
+    centerEl.style.color = '#dddddd';
+  } else {
+    const displayPct = Math.round(absPct || 0);
+    centerEl.textContent = displayPct + '%';
+    centerEl.style.color = `rgb(${c.r}, ${c.g}, ${c.b})`;
+  }
 }
 
-function renderPieCharts(totals) {
+function drawOlkPieChart(svgId, centerId, olkQty, prodQty, adhOlkPct) {
+  const svg = document.getElementById(svgId);
+  const centerEl = document.getElementById(centerId);
+  if (!svg || !centerEl) return;
+
+  svg.innerHTML = '';
+  const cx = 60, cy = 60, r = 50, strokeWidth = 16;
+  const circumference = 2 * Math.PI * r;
+
+  const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bgCircle.setAttribute('cx', cx);
+  bgCircle.setAttribute('cy', cy);
+  bgCircle.setAttribute('r', r);
+  bgCircle.setAttribute('fill', 'none');
+  bgCircle.setAttribute('stroke', '#02252b');
+  bgCircle.setAttribute('stroke-width', strokeWidth);
+  svg.appendChild(bgCircle);
+
+  const pctRatio = olkQty > 0 ? Math.min(prodQty / olkQty, 1.5) : 0;
+  const c = getOlkAdherenceColor(adhOlkPct || 0);
+  const prodArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  prodArc.setAttribute('cx', cx);
+  prodArc.setAttribute('cy', cy);
+  prodArc.setAttribute('r', r);
+  prodArc.setAttribute('fill', 'none');
+  prodArc.setAttribute('stroke', `rgb(${c.r}, ${c.g}, ${c.b})`);
+  prodArc.setAttribute('stroke-width', strokeWidth);
+  prodArc.setAttribute('stroke-dasharray', `${circumference * Math.min(pctRatio, 1)} ${circumference}`);
+  prodArc.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(prodArc);
+
+  const displayPct = Math.round(adhOlkPct || 0);
+  centerEl.textContent = displayPct + '%';
+  centerEl.style.color = `rgb(${c.r}, ${c.g}, ${c.b})`;
+}
+
+function renderPieCharts(totals, olkTotals) {
   if (!totals) return;
 
-  // SEW
-  const sewS = totals.sew?.schedule || 0;
-  const sewP = totals.sew?.production || 0;
-  drawPieChart('pieSew', 'pieSewPct', sewS, sewP);
-  document.getElementById('sewSched').textContent = fmtInt(sewS);
-  document.getElementById('sewProd').textContent = fmtInt(sewP);
+  const sew = totals.sew || {};
+  const assy = totals.assy || {};
 
-  // ASSY
-  const assyS = totals.assy?.schedule || 0;
-  const assyP = totals.assy?.production || 0;
-  drawPieChart('pieAssy', 'pieAssyPct', assyS, assyP);
-  document.getElementById('assySched').textContent = fmtInt(assyS);
-  document.getElementById('assyProd').textContent = fmtInt(assyP);
+  const sewOlk = (olkTotals && olkTotals.sew) || {};
+  const assyOlk = (olkTotals && olkTotals.assy) || {};
 
-  // Total
-  const totalS = totals.total?.schedule || 0;
-  const totalP = totals.total?.production || 0;
-  drawPieChart('pieTotal', 'pieTotalPct', totalS, totalP);
-  document.getElementById('totalSched').textContent = fmtInt(totalS);
-  document.getElementById('totalProd').textContent = fmtInt(totalP);
+  const getWindow = (bucket, key) => {
+    const win = bucket && bucket[key] ? bucket[key] : {};
+    return {
+      schedule: win.schedule || 0,
+      production: win.production || 0,
+    };
+  };
+
+  // SEW windows
+  const sewMtd = getWindow(sew, 'mtd');
+  const sewWtd = getWindow(sew, 'wtd');
+  const sewDaily = getWindow(sew, 'daily');
+
+  drawPieChart('pieSewMtd', 'pieSewMtdPct', sewMtd.schedule, sewMtd.production);
+  document.getElementById('sewMtdSched').textContent = fmtInt(sewMtd.schedule);
+  document.getElementById('sewMtdProd').textContent = fmtInt(sewMtd.production);
+
+  drawPieChart('pieSewWtd', 'pieSewWtdPct', sewWtd.schedule, sewWtd.production);
+  document.getElementById('sewWtdSched').textContent = fmtInt(sewWtd.schedule);
+  document.getElementById('sewWtdProd').textContent = fmtInt(sewWtd.production);
+
+  drawPieChart('pieSewDaily', 'pieSewDailyPct', sewDaily.schedule, sewDaily.production);
+  document.getElementById('sewDailySched').textContent = fmtInt(sewDaily.schedule);
+  document.getElementById('sewDailyProd').textContent = fmtInt(sewDaily.production);
+
+  // ASSY windows
+  const assyMtd = getWindow(assy, 'mtd');
+  const assyWtd = getWindow(assy, 'wtd');
+  const assyDaily = getWindow(assy, 'daily');
+
+  drawPieChart('pieAssyMtd', 'pieAssyMtdPct', assyMtd.schedule, assyMtd.production);
+  document.getElementById('assyMtdSched').textContent = fmtInt(assyMtd.schedule);
+  document.getElementById('assyMtdProd').textContent = fmtInt(assyMtd.production);
+
+  drawPieChart('pieAssyWtd', 'pieAssyWtdPct', assyWtd.schedule, assyWtd.production);
+  document.getElementById('assyWtdSched').textContent = fmtInt(assyWtd.schedule);
+  document.getElementById('assyWtdProd').textContent = fmtInt(assyWtd.production);
+
+  drawPieChart('pieAssyDaily', 'pieAssyDailyPct', assyDaily.schedule, assyDaily.production);
+  document.getElementById('assyDailySched').textContent = fmtInt(assyDaily.schedule);
+  document.getElementById('assyDailyProd').textContent = fmtInt(assyDaily.production);
+
+  const sewOlkQty = sewOlk.olk || 0;
+  const sewOlkProd = sewOlk.production || 0;
+  const sewAdhOlk = sewOlk.adh_olk_pct || 0;
+  drawOlkPieChart('pieSewOlk', 'pieSewOlkPct', sewOlkQty, sewOlkProd, sewAdhOlk);
+  const sewOlkQtyEl = document.getElementById('sewOlkQty');
+  const sewOlkProdEl = document.getElementById('sewOlkProd');
+  if (sewOlkQtyEl) sewOlkQtyEl.textContent = fmtInt(sewOlkQty);
+  if (sewOlkProdEl) sewOlkProdEl.textContent = fmtInt(sewOlkProd);
+
+  const assyOlkQty = assyOlk.olk || 0;
+  const assyOlkProd = assyOlk.production || 0;
+  const assyAdhOlk = assyOlk.adh_olk_pct || 0;
+  drawOlkPieChart('pieAssyOlk', 'pieAssyOlkPct', assyOlkQty, assyOlkProd, assyAdhOlk);
+  const assyOlkQtyEl = document.getElementById('assyOlkQty');
+  const assyOlkProdEl = document.getElementById('assyOlkProd');
+  if (assyOlkQtyEl) assyOlkQtyEl.textContent = fmtInt(assyOlkQty);
+  if (assyOlkProdEl) assyOlkProdEl.textContent = fmtInt(assyOlkProd);
+}
+
+// Group pies (MTD only), one donut per group total on page 3
+function renderGroupPieCharts(groups) {
+  const container = document.getElementById('groupChartsContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (!Array.isArray(groups) || !groups.length) return;
+
+  // Drop technical OTHER bucket if present; keep the 13 business groups
+  const filtered = groups.filter(g => g && g.group && g.group !== 'OTHER');
+
+  filtered.forEach((g, idx) => {
+    const mtd = g.mtd || {};
+    const sched = mtd.schedule || 0;
+    const prod = mtd.production || 0;
+
+    const svgId = `pieGroup${idx}`;
+    const centerId = `pieGroupPct${idx}`;
+    const schedId = `group${idx}Sched`;
+    const prodId = `group${idx}Prod`;
+
+    const box = document.createElement('div');
+    box.className = 'chart-box total-chart';
+    box.innerHTML = `
+      <h3>${g.group}</h3>
+      <div class="pie-container">
+        <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120" id="${svgId}"></svg>
+        <div class="pie-center" id="${centerId}">-</div>
+      </div>
+      <div class="chart-legend">
+        <span><span class="legend-dot sched"></span> Sched: <span id="${schedId}">-</span></span>
+        <span><span class="legend-dot prod"></span> Prod: <span id="${prodId}">-</span></span>
+      </div>
+    `;
+
+    container.appendChild(box);
+
+    drawPieChart(svgId, centerId, sched, prod);
+    document.getElementById(schedId).textContent = fmtInt(sched);
+    document.getElementById(prodId).textContent = fmtInt(prod);
+  });
 }
 
 function loadFromSnapshot(){
   const data = SNAPSHOT || {};
   const rows = Array.isArray(data.rows) ? data.rows : [];
   const totals = data.totals || null;
+  const groupTotals = Array.isArray(data.group_totals) ? data.group_totals : [];
+  const olkTotals = data.olk_totals || null;
   const lastUpEl = document.getElementById('lastUp');
 
   if (data.generated_at) {
@@ -407,7 +740,9 @@ function loadFromSnapshot(){
   }
 
   renderRows(rows);
-  renderPieCharts(totals);
+  renderPieCharts(totals, olkTotals);
+  renderGroupRows(groupTotals);
+  renderGroupPieCharts(groupTotals);
 }
 
 function manualRefresh(){
@@ -415,8 +750,31 @@ function manualRefresh(){
   loadFromSnapshot();
 }
 
-buildHeader();
+buildHeader('theadSew', 'Line');
+buildHeader('theadAssy', 'Line');
+buildHeader('theadGroups', 'Group');
 loadFromSnapshot();
+
+// Page rotation (SEW -> ASSY -> GROUPS)
+const PAGE_ORDER = ['sew', 'assy', 'groups'];
+
+function showPage(name){
+  PAGE_ORDER.forEach(p => {
+    const el = document.querySelector('.page-' + p);
+    if (el) el.classList.toggle('active', p === name);
+  });
+}
+
+function startRotation(){
+  let idx = 0;
+  showPage(PAGE_ORDER[idx]);
+  setInterval(() => {
+    idx = (idx + 1) % PAGE_ORDER.length;
+    showPage(PAGE_ORDER[idx]);
+  }, 30000);
+}
+
+startRotation();
 
 // Auto-reload the page every 30 minutes to pick up new snapshots
 const RELOAD_INTERVAL_MS = 30 * 60 * 1000;

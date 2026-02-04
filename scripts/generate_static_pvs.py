@@ -25,6 +25,9 @@ def main() -> None:
         "date": res.get("date"),
         "rows": res.get("rows", []),
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "totals": res.get("totals", {}),
+        "group_totals": res.get("group_totals", []),
+        "olk_totals": res.get("olk_totals", {}),
     }
 
     tmpl_path = os.path.join(ROOT_DIR, "templates", "pvs_static.html")

@@ -1,6 +1,0 @@
-SELECT [btch_qty] as [Total Batch Qty]
-      ,[btch_print_date] as [Batch Print Date]
-      ,[btch_ws_desc] as [Workshop description]
-      ,[btch_set] as [Batch Set]
-      ,[btch_nbr] as [Batch ID]
-  FROM [TCIS_MES2_265].[dbo].[btch_mstr]

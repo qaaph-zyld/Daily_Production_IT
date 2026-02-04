@@ -82,6 +82,18 @@
     "plannedQtysExcel": "PVS/Planned_qtys.xlsx",
     "externalSourceExcel": "G:\\Logistics\\6_Reporting\\1_PVS\\WH Receipt FY25.xlsx",
     "prodLineMapCsv": "PVS/ProdLine_Project_Map.csv",
+    "monthlyOlkExcel": "G:\\Logistics\\6_Reporting\\1_PVS\\Monthly_OLK.xlsx",
+    "ltpDirectory": "G:\\All\\Long-term planning",
+    "ltpSheetName": "Planing",
+    "ltpRefCsv": "ref.csv",
+    "ltpFilenameKeywords": ["FY", "CW", "LTP"],
+    "ltpDateRow": 63,
+    "ltpDateStartCol": "X",
+    "ltpDateEndCol": "BW",
+    "ltpLabel": "Weekly Output Plan",
+    "ltpFallbackCsv": "LTP_extracted.csv",
+    "ltpFormulasWorkbook": "LTP_formulas.xlsx",
+    "ltpFormulasSheetName": "LTP_Formulas",
     "description": "Excel files and data source paths"
   },
 
@@ -102,6 +114,8 @@
     "recalcExcelOnLoad": false,
     "showWeekendDataOnMonday": true,
     "useWhReceiptForPlan": true,
+    "planSource": "ltp",
+    "ltpWorkdaysPerWeek": 5,
     "description": "Dashboard behavior settings"
   },
 
@@ -115,9 +129,9 @@
   },
 
   "email": {
-    "smtp_server": "smtp.adient.com",
+    "smtp_server": "smtp.ga.adient.com",
     "smtp_port": 25,
-    "from_address": "pvs-dashboard@adient.com",
+    "from_address": "a440719@adient.com",
     "recipients": [
       "aleksandar.karlicic@adient.com",
       "aleksandar.nikolic@adient.com",
@@ -146,7 +160,6 @@
       "katarina.drljacic@adient.com",
       "katarina.filipovic@adient.com",
       "kristina.radic@adient.com",
-      "lazar.sekulic@adient.com",
       "marija.markovic@adient.com",
       "marija.spasojevic@adient.com",
       "marija.1.stanojevic@adient.com",
@@ -194,6 +207,7 @@
       "zoran.pavlovic@adient.com",
       "zorka.dakovic@adient.com"
     ],
+    "test_recipient": "nikola.jelacic@adient.com",
     "description": "Email configuration for PVS report distribution"
   }
 }
