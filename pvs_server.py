@@ -115,6 +115,12 @@ PVS_OLK_XLSX = _DATA_SOURCES.get(
     r"G:\Logistics\6_Reporting\1_PVS\Monthly_OLK.xlsx",
 )
 
+# OLK CSV (preferred source — PVS/OLK.csv)
+_olk_csv_default = os.path.join('PVS', 'OLK.csv')
+PVS_OLK_CSV = _DATA_SOURCES.get('olkCsv', _olk_csv_default)
+if PVS_OLK_CSV and not os.path.isabs(PVS_OLK_CSV):
+    PVS_OLK_CSV = os.path.join(_BASE_DIR, PVS_OLK_CSV)
+
 _BEHAVIOR = SETTINGS.get('behavior', {}) if isinstance(SETTINGS, dict) else {}
 _PLAN_SOURCE = str(_BEHAVIOR.get('planSource', '') or '').strip().lower()
 PVS_PLAN_SOURCE = _PLAN_SOURCE or ('wh_receipt' if _BEHAVIOR.get('useWhReceiptForPlan', True) else 'planned_xlsx')
@@ -184,6 +190,45 @@ def load_map_csv(path: str) -> dict[str, str]:
             if code and proj:
                 mapping[code] = proj
     return mapping
+
+
+def load_olk_csv(path: str) -> dict[str, float]:
+    """Return dict: {label -> monthly_olk_qty} from PVS/OLK.csv.
+
+    CSV format:  Dashboard page,<MonthName>
+                 <page_num>,<label>,<qty>
+    Labels are dashboard display names (e.g. BJA, CDPO - SEW, Volvo - ASSY).
+    """
+    data: dict[str, float] = {}
+    if not path or not os.path.exists(path):
+        print(f"[OLK] OLK CSV not found: {path}")
+        return data
+
+    try:
+        with open(path, 'r', newline='', encoding='utf-8-sig') as f:
+            first_line = f.readline()
+            for raw in f:
+                line = (raw or '').strip()
+                if not line:
+                    continue
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) < 3:
+                    continue
+                label = parts[1].strip()
+                if not label:
+                    continue
+                try:
+                    val = float(parts[2] or 0)
+                except (ValueError, TypeError):
+                    val = 0.0
+                if val:
+                    data[label] = max(data.get(label, 0.0), val)
+    except Exception as e:
+        print(f"[OLK] ERROR reading OLK CSV: {e}")
+        return data
+
+    print(f"[OLK] Loaded {len(data)} OLK rows from CSV: {path}")
+    return data
 
 
 def load_monthly_olk(path: str) -> dict[str, float]:
@@ -1760,7 +1805,7 @@ def _compute_metrics_from_page_csvs(
     produced_assy = _canonicalize_series(produced_assy_raw, canonical_assy)
 
     mapping = load_map_csv(PVS_MAP_CSV)
-    olk_norm = _build_olk_norm_by_label(mapping, load_monthly_olk(PVS_OLK_XLSX))
+    olk_norm = _build_olk_norm_by_label(mapping, load_olk_csv(PVS_OLK_CSV))
 
     def adherence(delta: float, schedule: float) -> float | None:
         if schedule <= 0:
@@ -2516,10 +2561,10 @@ def compute_metrics():
     ref_meta = _load_ref_meta(PVS_LTP_REF_CSV)
 
     # Monthly OLK targets by prod line (for OLK column and OLK adherence)
-    # Row Labels in Monthly_OLK.xlsx may be either prod line codes (B_FG, Z_FG, ...)
-    # or display/project names (CDPO - SEW, JLR - SEW, ...). Normalise so that
-    # we always index OLK by prod line code used in planned/produced.
-    raw_olk = load_monthly_olk(PVS_OLK_XLSX)
+    # OLK targets: prefer PVS/OLK.csv (display labels); fall back to Monthly_OLK.xlsx
+    raw_olk = load_olk_csv(PVS_OLK_CSV)
+    if not raw_olk:
+        raw_olk = load_monthly_olk(PVS_OLK_XLSX)
     olk_by_code: dict[str, float] = {}
     if raw_olk:
         # Build reverse map: display name -> code

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PVS Pipeline — Architecture Overview</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: #0a1e24; color: #e8f1f2; margin: 0; padding: 24px; }
+  h1 { color: #c8e000; text-align: center; margin-bottom: 4px; }
+  h2 { color: #7dc8e8; margin-top: 32px; }
+  .subtitle { color: #a0c0c4; text-align: center; font-size: 14px; margin-bottom: 28px; }
+  .mermaid { background: #08343a; border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .section { background: #0e2a30; border-radius: 10px; padding: 18px 22px; margin: 14px 0; border-left: 4px solid #c8e000; }
+  .section h3 { color: #c8e000; margin: 0 0 8px 0; font-size: 16px; }
+  .section p, .section li { color: #cde4e6; font-size: 14px; line-height: 1.6; }
+  ul { padding-left: 20px; }
+  code { background: #163840; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #7dc8e8; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  th { background: #0f5560; color: #e3f2f4; padding: 8px 12px; text-align: left; }
+  td { background: #08343a; color: #e8f1f2; padding: 8px 12px; border-bottom: 1px solid #1a4a50; }
+  .legend { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin: 10px 0 20px; }
+  .legend span { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>Adient Loznica — PVS Pipeline Architecture</h1>
+<div class="subtitle">Production vs Schedule Dashboard · Modular Data Flow · Feb 2026</div>
+
+<!-- ===== 1. HIGH-LEVEL PIPELINE ===== -->
+<h2>1. End-to-End Data Flow</h2>
+<div class="legend">
+  <span><span class="dot" style="background:#c8e000"></span> Data Sources</span>
+  <span><span class="dot" style="background:#7dc8e8"></span> Processing</span>
+  <span><span class="dot" style="background:#ff9999"></span> Outputs</span>
+  <span><span class="dot" style="background:#28a745"></span> Delivery</span>
+</div>
+
+<div class="mermaid">
+flowchart LR
+  subgraph SRC["① Data Sources"]
+    direction TB
+    LTP["LTP Workbook\n(G:\\All\\Long-term planning)"]
+    SQL["SQL Server\n(QADEE2798)"]
+    OLK["OLK CSV\n(PVS/OLK.csv)"]
+    REF["ref.csv\n(line mappings)"]
+    ML["master_list.csv\n(page layout)"]
+  end
+
+  subgraph PROC["② pvs_server.py Processing"]
+    direction TB
+    PLAN["load_planned_pages_from_ltp()\n→ weekly→daily expansion\n÷ 5 workdays"]
+    PROD["SQL query\n→ PVS-Production.sql\n→ daily production CSVs"]
+    OLKL["load_olk_csv()\n→ monthly targets"]
+    COMP["compute_metrics()\nMTD · WTD · Daily\nAdherence · Delta · OLK"]
+  end
+
+  subgraph CSV["③ Intermediate CSVs"]
+    direction TB
+    PD["PVS/Planned/Day/\n1,2,3_PVS_per_*.csv"]
+    PW["PVS/Planned/Week/"]
+    PM["PVS/Planned/Month/"]
+    PR["PVS/Production/\n1,2,3_PVS_per_*.csv"]
+  end
+
+  subgraph OUT["④ Outputs"]
+    direction TB
+    DASH["Live Dashboard\n:5051/pvs.html"]
+    STATIC["Static HTML\nnetlify_static/index.html\n+ TV PVS.html"]
+    EMAIL["Email Report\nsend_pvs_email_auto.py"]
+  end
+
+  subgraph DEL["⑤ Delivery"]
+    direction TB
+    TV["TV Displays\n(Anthias)"]
+    NET["Netlify\ndailyproduction2798"]
+    INBOX["Email Recipients"]
+  end
+
+  LTP --> PLAN
+  SQL --> PROD
+  OLK --> OLKL
+  REF --> PLAN
+  ML --> COMP
+
+  PLAN --> PD & PW & PM
+  PROD --> PR
+
+  PD & PR & OLKL --> COMP
+
+  COMP --> DASH & STATIC & EMAIL
+
+  DASH --> TV
+  STATIC --> NET & TV
+  EMAIL --> INBOX
+
+  style SRC fill:#1a3a20,stroke:#c8e000,color:#e8f1f2
+  style PROC fill:#0e2a40,stroke:#7dc8e8,color:#e8f1f2
+  style CSV fill:#1a2a30,stroke:#a0c0c4,color:#e8f1f2
+  style OUT fill:#2a1a1a,stroke:#ff9999,color:#e8f1f2
+  style DEL fill:#1a2a1a,stroke:#28a745,color:#e8f1f2
+</div>
+
+<!-- ===== 2. PLANNED QTY PIPELINE ===== -->
+<h2>2. Planned Quantity Pipeline (Weekly → Daily)</h2>
+<div class="mermaid">
+flowchart TD
+  A["LTP Workbook\n(weekly buckets per Monday)"] --> B["load_planned_pages_from_ltp()"]
+  B --> C{"_ltp_looks_weekly()?\n≥70% Mondays, gaps ≈7d"}
+  C -- Yes --> D["_expand_weekly_plan_to_daily()\nweekly_qty ÷ 5 workdays\n→ Mon–Fri equal split"]
+  C -- No --> E["Use as-is (already daily)"]
+  D --> F["Write CSVs"]
+  E --> F
+  F --> G["PVS/Planned/Day/*.csv\n(1 value per day of month)"]
+  F --> H["PVS/Planned/Week/*.csv\n(summed Mon–Sun)"]
+  F --> I["PVS/Planned/Month/*.csv\n(single monthly total)"]
+  G --> J["_compute_metrics_from_page_csvs()\naggregate by window"]
+  J --> K["Daily: plan_day = as_of only"]
+  J --> L["WTD: Mon of week → as_of"]
+  J --> M["MTD: 1st of month → as_of"]
+
+  style A fill:#1a3a20,stroke:#c8e000
+  style D fill:#0e3a50,stroke:#7dc8e8
+  style G fill:#1a2a30,stroke:#a0c0c4
+  style K fill:#2a1a1a,stroke:#ff9999
+  style L fill:#2a1a1a,stroke:#ff9999
+  style M fill:#2a1a1a,stroke:#ff9999
+</div>
+
+<div class="section">
+  <h3>Key Formula: Daily = Weekly ÷ 5</h3>
+  <p>Each weekly LTP bucket is divided evenly across 5 workdays (Mon–Fri). 
+     The remainder is distributed 1 extra unit to the first <code>N % 5</code> days.<br>
+     <strong>Daily should be 20% of weekly</strong> (not 50%). Config: <code>behavior.ltpWorkdaysPerWeek = 5</code></p>
+</div>
+
+<!-- ===== 3. OLK PIPELINE ===== -->
+<h2>3. OLK (Outlook) Monthly Targets</h2>
+<div class="mermaid">
+flowchart LR
+  A["PVS/OLK.csv\n(page, label, monthly qty)"] --> B["load_olk_csv()"]
+  B --> C["Dict: label → monthly OLK"]
+  C --> D["Per-line:\nOLK Adh% = Prod_MTD / OLK × 100"]
+  C --> E["Category totals:\nSEW OLK, ASSY OLK"]
+  D --> F["Dashboard MTD OLK column"]
+  E --> G["Donut charts in email"]
+
+  style A fill:#1a3a20,stroke:#c8e000
+  style B fill:#0e3a50,stroke:#7dc8e8
+  style F fill:#2a1a1a,stroke:#ff9999
+</div>
+
+<!-- ===== 4. MODULAR ARCHITECTURE ===== -->
+<h2>4. Modular Architecture</h2>
+
+<div class="section">
+  <h3>Design Principles</h3>
+  <ul>
+    <li><strong>CSV as intermediate format</strong> — all planned and production data flows through CSVs in <code>PVS/Planned/</code> and <code>PVS/Production/</code>, making each stage independently verifiable</li>
+    <li><strong>master_list.csv</strong> — controls which rows appear on each dashboard page (PROJECT / SEW / ASSY), add/remove lines without code changes</li>
+    <li><strong>ref.csv</strong> — maps LTP project/model combinations to dashboard labels; new products need only a CSV row</li>
+    <li><strong>OLK.csv</strong> — monthly targets editable in a simple CSV; no need to maintain an Excel workbook</li>
+    <li><strong>settings.json</strong> — single config file for all behavior, display, email, and data source settings</li>
+    <li><strong>Pluggable plan sources</strong> — <code>planSource</code> can be <code>ltp</code>, <code>ltp_csv</code>, <code>ltp_formulas</code>, or <code>wh_receipt</code></li>
+  </ul>
+</div>
+
+<table>
+  <tr><th>Module</th><th>File</th><th>Responsibility</th></tr>
+  <tr><td>Config</td><td><code>config/settings.json</code></td><td>All tunable parameters</td></tr>
+  <tr><td>Plan Source</td><td><code>pvs_server.py</code> (load_planned_*)</td><td>Read LTP / WH Receipt → daily plan CSVs</td></tr>
+  <tr><td>Production</td><td><code>PVS/Production/PVS-Production.sql</code></td><td>SQL → daily production CSVs</td></tr>
+  <tr><td>OLK</td><td><code>PVS/OLK.csv</code></td><td>Monthly outlook targets</td></tr>
+  <tr><td>Layout</td><td><code>PVS/master_list.csv</code></td><td>Dashboard page definitions</td></tr>
+  <tr><td>Mapping</td><td><code>PVS/ref.csv</code></td><td>LTP model → dashboard label</td></tr>
+  <tr><td>Metrics</td><td><code>pvs_server.py</code> (compute_metrics)</td><td>Aggregate MTD/WTD/Daily, adherence</td></tr>
+  <tr><td>Live UI</td><td><code>templates/pvs.html</code></td><td>Flask-served dashboard</td></tr>
+  <tr><td>Static UI</td><td><code>templates/pvs_static.html</code></td><td>Snapshot for TV/Netlify</td></tr>
+  <tr><td>Email</td><td><code>scripts/send_pvs_email_auto.py</code></td><td>SMTP report with donut charts</td></tr>
+</table>
+
+<!-- ===== 5. SCHEDULE ===== -->
+<h2>5. Daily Refresh Schedule</h2>
+<div class="mermaid">
+flowchart LR
+  A["08:45 CET\nMon–Fri"] --> B["Scheduled Task\nrefresh_excel_scheduled.ps1"]
+  B --> C["Recalc LTP workbook\n(if needed)"]
+  C --> D["python generate_static_pvs.py\n→ compute_metrics()\n→ write HTML"]
+  D --> E["Deploy to Netlify\n+ copy to TV share"]
+  D --> F["python send_pvs_email_auto.py\n→ SMTP email report"]
+
+  style A fill:#1a3a20,stroke:#c8e000
+  style D fill:#0e3a50,stroke:#7dc8e8
+  style E fill:#1a2a1a,stroke:#28a745
+  style F fill:#1a2a1a,stroke:#28a745
+</div>
+
+<script>
+  mermaid.initialize({ 
+    startOnLoad: true, 
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#0e4b52',
+      primaryTextColor: '#e8f1f2',
+      primaryBorderColor: '#7dc8e8',
+      lineColor: '#a0c0c4',
+      secondaryColor: '#1a3a20',
+      tertiaryColor: '#2a1a1a'
+    }
+  });
+</script>
+</body>
+</html>

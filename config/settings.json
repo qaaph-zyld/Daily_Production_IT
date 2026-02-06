@@ -83,6 +83,7 @@
     "externalSourceExcel": "G:\\Logistics\\6_Reporting\\1_PVS\\WH Receipt FY25.xlsx",
     "prodLineMapCsv": "PVS/ProdLine_Project_Map.csv",
     "monthlyOlkExcel": "G:\\Logistics\\6_Reporting\\1_PVS\\Monthly_OLK.xlsx",
+    "olkCsv": "PVS/OLK.csv",
     "ltpDirectory": "G:\\All\\Long-term planning",
     "ltpSheetName": "Planing",
     "ltpRefCsv": "ref.csv",
