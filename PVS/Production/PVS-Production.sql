@@ -101,13 +101,14 @@ ProjectMappedData AS (
             WHEN pt.[pt_prod_line] IN (''B_FG'', ''F_FG'', ''P_FG'') THEN ''LUCENEC''
             WHEN pt.[pt_prod_line] = ''H_FG'' THEN ''BJA''
             WHEN pt.[pt_prod_line] IN (''J_FG'', ''L_FG'') THEN ''JLR''
-            WHEN pt.[pt_prod_line] IN (''C_FG'', ''Z_FG'', ''G_FG'') THEN ''CDPO''
+            WHEN pt.[pt_prod_line] IN (''C_FG'', ''Z_FG'') THEN ''CDPO''
+            WHEN pt.[pt_prod_line] = ''G_FG'' THEN ''PZ1D''
             WHEN pt.[pt_prod_line] IN (''V_FG'', ''A_FG'') THEN ''VOLVO''
             WHEN pt.[pt_prod_line] IN (''K_FG'', ''Q_FG'') THEN ''KIA''
             WHEN pt.[pt_prod_line] IN (''M_FG'', ''N_FG'') THEN ''MMA''
             WHEN pt.[pt_prod_line] IN (''O_FG'', ''S_FG'') THEN ''OPEL''
             WHEN pt.[pt_prod_line] IN (''R_FG'', ''E_FG'', ''U_FG'') THEN ''CV''
-            WHEN pt.[pt_prod_line] IN ( ''E_FG'',''T_FG'') THEN ''NISSAN''
+            WHEN pt.[pt_prod_line] = ''T_FG'' THEN ''PIP''
             ELSE ''Other''
         END AS [PROJECT],
 
@@ -126,7 +127,7 @@ ProjectMappedData AS (
             WHEN pt.[pt_prod_line] = ''R_FG'' THEN ''RENAULT''
             WHEN pt.[pt_prod_line] = ''E_FG'' THEN ''SCANIA''
             WHEN pt.[pt_prod_line] = ''U_FG'' THEN ''MAN''
-            WHEN pt.[pt_prod_line] = ''T_FG'' THEN ''P13A''
+            WHEN pt.[pt_prod_line] = ''T_FG'' THEN ''PIP''
             WHEN pt.[pt_prod_line] = ''G_FG'' THEN ''PZ1D''
             ELSE NULL
         END AS [SEW],

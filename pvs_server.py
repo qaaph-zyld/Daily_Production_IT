@@ -144,7 +144,7 @@ PVS_PROD_TR_TYPES = [
 SEW_NAME_OVERRIDES = {
     'BJA',
     'MAN',
-    'P13A',
+    'PIP',
     'PZ1D',
     'PRE PRODUCTION',
     'RENAULT',
@@ -156,9 +156,8 @@ GROUP_OVERRIDES = {
     'RENAULT': 'CV',
     'MAN': 'CV',
     'SCANIA': 'CV',
-    # Nissan
-    'P13A': 'NISSAN',
-    'PZ1D': 'NISSAN',
+    # PIP project (P13A SEW line maps to PIP project)
+    'P13A': 'PIP',
     # Volvo (combine SEW and ASSY into one group)
     'VOLVO- SEW': 'VOLVO',
     'VOLVO- ASSY': 'VOLVO',
@@ -1279,8 +1278,8 @@ def _load_ref_meta(path: str) -> dict[str, dict[str, str]]:
     return meta
 
 
-def _load_ltp_page_reference(path: str) -> dict[tuple[str, str, str], dict[str, str]]:
-    ref: dict[tuple[str, str, str], dict[str, str]] = {}
+def _load_ltp_page_reference(path: str) -> dict[tuple[str, str, str], dict[str, str | float]]:
+    ref: dict[tuple[str, str, str], dict[str, str | float]] = {}
     if not path or not os.path.exists(path):
         print(f"[LTP] Reference CSV not found: {path}")
         return ref
@@ -1300,10 +1299,20 @@ def _load_ltp_page_reference(path: str) -> dict[tuple[str, str, str], dict[str, 
             if not project or not model or not row_type:
                 continue
 
+            # Parse LTP multiplier (default 1.0 if not specified or invalid)
+            multiplier_raw = row.get('LTP multiplier') or row.get('ltp multiplier') or ''
+            try:
+                multiplier = float(multiplier_raw) if multiplier_raw else 1.0
+                if multiplier <= 0:
+                    multiplier = 1.0
+            except (ValueError, TypeError):
+                multiplier = 1.0
+
             ref[(project, model, row_type)] = {
                 'PROJECT': str(row.get('PROJECT') or '').strip(),
                 'SEW': str(row.get('SEW') or '').strip(),
                 'ASSY': str(row.get('ASSY') or '').strip(),
+                'multiplier': multiplier,
             }
 
     return ref
@@ -1478,6 +1487,12 @@ def load_planned_pages_from_ltp(
 
             if not per_day:
                 continue
+
+            # Apply LTP multiplier from ref.csv (CV=2x, PZ1D=7x, default=1x)
+            multiplier = float(labels.get('multiplier', 1.0) or 1.0)
+            if multiplier != 1.0:
+                per_day = {d: int(round(qty * multiplier)) for d, qty in per_day.items()}
+                print(f"[LTP] Applied multiplier {multiplier}x for {project_key}/{model_key} ({row_type})")
 
             proj_label = (labels.get('PROJECT') or project_key).strip()
             if proj_label:
@@ -2066,6 +2081,46 @@ def _compute_metrics_from_page_csvs(
             'production': round(prod_qty, 2),
             'adh_olk_pct': round(adh_olk_pct, 1),
         }
+
+    # --- Diagnostic CSV export ---------------------------------------------------
+    try:
+        diag_dir = os.path.join(_BASE_DIR, 'PVS', 'Debug')
+        os.makedirs(diag_dir, exist_ok=True)
+        diag_path = os.path.join(diag_dir, 'dashboard_diagnostic.csv')
+        with open(diag_path, 'w', newline='', encoding='utf-8') as df:
+            df.write('Page,Label,Daily_Sched,Daily_Prod,Daily_Delta,WTD_Sched,WTD_Prod,WTD_Delta,MTD_Sched,MTD_Prod,MTD_Delta,MTD_Adh%,OLK,OLK_Adh%\n')
+            # Page 1 – PROJECT group totals
+            for gt in group_totals:
+                name = gt.get('group', '')
+                mtd = gt.get('mtd', {})
+                wtd = gt.get('wtd', {})
+                daily = gt.get('daily', {})
+                df.write(','.join([
+                    'PROJECT', str(name),
+                    str(daily.get('schedule', 0)), f"{daily.get('production', 0):.2f}", f"{daily.get('delta', 0):.2f}",
+                    str(wtd.get('schedule', 0)), f"{wtd.get('production', 0):.2f}", f"{wtd.get('delta', 0):.2f}",
+                    str(mtd.get('schedule', 0)), f"{mtd.get('production', 0):.2f}", f"{mtd.get('delta', 0):.2f}",
+                    str(mtd.get('adherence_pct', '') if mtd.get('adherence_pct') is not None else ''),
+                    str(mtd.get('olk', 0)), str(mtd.get('adh_olk_pct', 0)),
+                ]) + '\n')
+            # Pages 2 & 3 – SEW / ASSY detail rows
+            for r in rows:
+                cat = str(r.get('category', ''))
+                line = str(r.get('line', ''))
+                mtd = r.get('mtd', {})
+                wtd = r.get('wtd', {})
+                daily = r.get('daily', {})
+                df.write(','.join([
+                    cat, line,
+                    str(daily.get('schedule', 0)), f"{daily.get('production', 0):.2f}", f"{daily.get('delta', 0):.2f}",
+                    str(wtd.get('schedule', 0)), f"{wtd.get('production', 0):.2f}", f"{wtd.get('delta', 0):.2f}",
+                    str(mtd.get('schedule', 0)), f"{mtd.get('production', 0):.2f}", f"{mtd.get('delta', 0):.2f}",
+                    str(mtd.get('adherence_pct', '') if mtd.get('adherence_pct') is not None else ''),
+                    str(mtd.get('olk', 0)), str(mtd.get('adh_olk_pct', 0)),
+                ]) + '\n')
+        print(f"[DIAG] Wrote diagnostic CSV: {diag_path}")
+    except Exception as e:
+        print(f"[DIAG] WARNING: Could not write diagnostic CSV: {e}")
 
     return {
         'success': True,
